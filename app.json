@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Mommy Countdown",
+    "slug": "mommy-count",
+    "version": "1.0.0",
+    "scheme": "mommycount",
+    "android": {
+      "package": "com.anonymous.mommycount"
+    },
+    "ios": {
+      "bundleIdentifier": "com.anonymous.mommycount"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
