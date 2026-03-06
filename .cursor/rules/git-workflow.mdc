@@ -1,0 +1,23 @@
+---
+description: Nach größeren Änderungen Commit und Push zu GitHub
+alwaysApply: true
+---
+
+# Git-Workflow für Mommy Countdown
+
+Nach **größeren Änderungen** (z.B. neue Features, UI-Anpassungen, Bugfixes) solltest du:
+
+1. **Commit** mit aussagekräftiger Nachricht erstellen
+2. **Push** zu GitHub senden
+
+**Repository:** https://github.com/jasonquansah93-sketch/Mommy_countdown_07_march
+
+**Beispiel-Befehle:**
+```bash
+cd /Users/Jason1/mommy-count
+git add -A
+git commit -m "feat: Presets mit Farbkreisen statt Beschreibung"
+git push origin main
+```
+
+**Wann ausführen:** Nach abgeschlossenen Änderungen, die mehrere Dateien betreffen oder die App-Funktionalität/UI spürbar verändern.

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useDesign } from '../../context/DesignContext';
 import { DESIGN_PRESETS } from '../../constants/presets';
+import { THEMES } from '../../constants/themes';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { usePremium } from '../../context/PremiumContext';
@@ -22,6 +23,8 @@ export default function PresetsTab() {
         {DESIGN_PRESETS.map((preset) => {
           const isSelected = design.presetId === preset.id;
           const isLocked = preset.premium && !isPremium;
+          const theme = THEMES.find((t) => t.id === preset.themeId);
+          const swatchColors = theme ? [theme.colors.primary, theme.colors.secondary, theme.colors.accent] : [];
           return (
             <TouchableOpacity
               key={preset.id}
@@ -44,11 +47,13 @@ export default function PresetsTab() {
               }}
             >
               <View style={styles.presetContent}>
-                <Text style={[styles.presetName, { color: colors.text }]} numberOfLines={2}>
+                <View style={styles.swatchRow}>
+                  {swatchColors.map((hex, i) => (
+                    <View key={i} style={[styles.swatchDot, { backgroundColor: hex }]} />
+                  ))}
+                </View>
+                <Text style={[styles.presetName, { color: colors.text }]} numberOfLines={1}>
                   {preset.name}
-                </Text>
-                <Text style={[styles.presetDesc, { color: colors.textSecondary }]}>
-                  {preset.description}
                 </Text>
               </View>
               {isLocked ? (
@@ -94,13 +99,20 @@ const styles = StyleSheet.create({
   presetContent: {
     flex: 1,
   },
+  swatchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  swatchDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
   presetName: {
     fontSize: 15,
     fontWeight: '700',
-    marginBottom: 4,
-  },
-  presetDesc: {
-    fontSize: 13,
   },
   checkIcon: {
     position: 'absolute',
