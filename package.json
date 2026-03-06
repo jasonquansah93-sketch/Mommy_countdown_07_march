@@ -4,7 +4,7 @@
   "main": "expo-router/entry",
   "scripts": {
     "postinstall": "node scripts/postinstall-fix.js",
-    "start": "expo start",
+    "start": "RCT_METRO_PORT=8082 expo start --lan",
     "android": "expo run:android",
     "ios": "expo start --ios --localhost",
     "web": "expo start --web"

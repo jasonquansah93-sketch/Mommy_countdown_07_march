@@ -1,43 +1,112 @@
-import { View, Text, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { colors } from '../../constants/colors';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { useDesign } from '../../context/DesignContext';
+import DesignHeader from '../../components/design/DesignHeader';
+import DesignPreview from '../../components/design/DesignPreview';
+import PresetsTab from '../../components/design/PresetsTab';
+import ColorsTab from '../../components/design/ColorsTab';
+import TypographyTab from '../../components/design/TypographyTab';
+import PhotoFiltersTab from '../../components/design/PhotoFiltersTab';
+import ScreenBackground from '../../components/shared/ScreenBackground';
+
+const TABS = ['Presets', 'Colors', 'Typography', 'Photo &\nFilters'] as const;
 
 export default function DesignScreen() {
+  const { colors } = useDesign();
+  const [activeTab, setActiveTab] = useState(0);
+
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={[colors.primary, colors.primaryDark]}
-        style={styles.header}
+    <ScreenBackground>
+      <DesignHeader />
+
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        stickyHeaderIndices={[0]}
       >
-        <Text style={styles.title}>Design</Text>
-      </LinearGradient>
-      <View style={styles.content}>
-        <Text style={styles.placeholder}>Design presets</Text>
-      </View>
-    </View>
+        {/* Sticky: preview + tab bar - stays visible when scrolling font/filter lists */}
+        <View style={[styles.stickyHeader, { backgroundColor: colors.background }]}>
+          <DesignPreview />
+          <View style={[styles.tabBar, { backgroundColor: colors.background }]}>
+          <View style={styles.tabBarInner}>
+            {TABS.map((tab, i) => {
+              const isActive = activeTab === i;
+              return (
+                <TouchableOpacity
+                  key={tab}
+                  style={styles.tab}
+                  onPress={() => setActiveTab(i)}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles.tabText,
+                      {
+                        color: isActive ? colors.primary : colors.textSecondary,
+                        fontWeight: isActive ? '700' : '500',
+                      },
+                    ]}
+                    numberOfLines={2}
+                  >
+                    {tab}
+                  </Text>
+                  {isActive ? (
+                    <View style={[styles.tabIndicator, { backgroundColor: colors.primary }]} />
+                  ) : null}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <View style={[styles.tabDivider, { backgroundColor: colors.accent }]} />
+          </View>
+        </View>
+
+        {/* Tab content */}
+        {activeTab === 0 ? <PresetsTab /> : null}
+        {activeTab === 1 ? <ColorsTab /> : null}
+        {activeTab === 2 ? <TypographyTab /> : null}
+        {activeTab === 3 ? <PhotoFiltersTab /> : null}
+      </ScrollView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  header: {
-    paddingTop: 60,
-    paddingBottom: 24,
-    paddingHorizontal: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  content: {
+  scroll: {
     flex: 1,
-    padding: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  placeholder: {
-    fontSize: 18,
-    color: colors.textSecondary,
+  scrollContent: {
+    paddingBottom: 100,
+  },
+  stickyHeader: {
+    paddingBottom: 0,
+  },
+  tabBar: {
+    paddingTop: 12,
+  },
+  tabBarInner: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+  },
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingBottom: 10,
+  },
+  tabText: {
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  tabIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    left: '20%',
+    right: '20%',
+    height: 2.5,
+    borderRadius: 2,
+  },
+  tabDivider: {
+    height: 1,
   },
 });

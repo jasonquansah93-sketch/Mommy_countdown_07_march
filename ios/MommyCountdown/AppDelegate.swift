@@ -38,6 +38,10 @@ public class AppDelegate: ExpoAppDelegate {
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey: Any] = [:]
   ) -> Bool {
+    if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+       let metroURLString = components.queryItems?.first(where: { $0.name == "url" })?.value {
+      UserDefaults.standard.set(metroURLString, forKey: "expo_metro_url")
+    }
     return super.application(app, open: url, options: options) || RCTLinkingManager.application(app, open: url, options: options)
   }
 
@@ -62,7 +66,33 @@ class ReactNativeDelegate: ExpoReactNativeFactoryDelegate {
 
   override func bundleURL() -> URL? {
 #if DEBUG
-    return RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: ".expo/.virtual-metro-entry")
+    if let url = RCTBundleURLProvider.sharedSettings().jsBundleURL(
+        forBundleRoot: ".expo/.virtual-metro-entry") {
+      return url
+    }
+    if let savedURLString = UserDefaults.standard.string(forKey: "expo_metro_url"),
+       let savedBaseURL = URL(string: savedURLString) {
+      var components = URLComponents()
+      components.scheme = "http"
+      components.host = savedBaseURL.host
+      components.port = savedBaseURL.port
+      components.path = "/.expo/.virtual-metro-entry.bundle"
+      components.queryItems = [
+        URLQueryItem(name: "platform", value: "ios"),
+        URLQueryItem(name: "dev", value: "true"),
+        URLQueryItem(name: "hot", value: "false"),
+        URLQueryItem(name: "lazy", value: "true")
+      ]
+      return components.url
+    }
+    if let ipPath = Bundle.main.path(forResource: "ip", ofType: "txt"),
+       let raw = try? String(contentsOfFile: ipPath, encoding: .utf8) {
+      let ip = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+      if !ip.isEmpty {
+        return URL(string: "http://\(ip):8082/.expo/.virtual-metro-entry.bundle?platform=ios&dev=true&hot=false&lazy=true")
+      }
+    }
+    return nil
 #else
     return Bundle.main.url(forResource: "main", withExtension: "jsbundle")
 #endif
