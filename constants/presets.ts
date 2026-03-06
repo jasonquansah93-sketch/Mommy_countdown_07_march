@@ -52,6 +52,19 @@ export const PRIMARY_FONTS = [
   { name: 'Inter', premium: false },
 ];
 
+/** Typography-Tab: 9 Schriften – 6 Sans-Serif + 3 verspielte (Script/Serif) */
+export const TYPOGRAPHY_FONTS = [
+  { name: 'Fredoka', premium: false },
+  { name: 'Poppins', premium: false },
+  { name: 'Quicksand', premium: false },
+  { name: 'Montserrat', premium: false },
+  { name: 'Nunito', premium: false },
+  { name: 'Inter', premium: false },
+  { name: 'Dancing Script', premium: false },
+  { name: 'Pacifico', premium: false },
+  { name: 'Lora', premium: false },
+];
+
 export const SCRIPT_FONTS = [
   { name: 'Dancing Script', premium: true },
   { name: 'Pacifico', premium: true },

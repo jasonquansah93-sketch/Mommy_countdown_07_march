@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useDesign } from '../../context/DesignContext';
-import { PRIMARY_FONTS } from '../../constants/presets';
+import { TYPOGRAPHY_FONTS } from '../../constants/presets';
 import { getResolvedFontFamily } from '../../constants/fonts';
 
 const PREVIEW_TEXT = 'Meeting you in...';
@@ -25,7 +25,7 @@ export default function TypographyTab() {
       </Text>
 
       <View style={styles.fontList}>
-        {PRIMARY_FONTS.map((font) => {
+        {TYPOGRAPHY_FONTS.map((font) => {
           const isSelected = design.fontFamily === font.name;
           const resolvedFont = getResolvedFontFamily(font.name);
           return (
