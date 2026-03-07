@@ -1,6 +1,6 @@
 /**
  * KicksHistoryModal — bar chart showing kick counts over time.
- * Timeline toggle: Last 7 Days / Last 4 Weeks / Last 6 Months.
+ * Timeline toggle: Last 7 Days / Last 4 Weeks / Last 6 Months / Last 9 Months.
  * No external chart library — drawn with plain Views for zero overhead.
  */
 import React, { useState, useEffect } from 'react';
@@ -21,7 +21,7 @@ import { RADIUS, GLASS } from '../../constants/tokens';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
-type Timeline = '7d' | '4w' | '6m';
+type Timeline = '7d' | '4w' | '6m' | '9m';
 
 interface BarData {
   label: string;
@@ -86,6 +86,23 @@ function buildMonths6(): { label: string; dates: string[] }[] {
   });
 }
 
+function buildMonths9(): { label: string; dates: string[] }[] {
+  const today = new Date();
+  return Array.from({ length: 9 }, (_, mi) => {
+    const d = new Date(today.getFullYear(), today.getMonth() - (8 - mi), 1);
+    const year = d.getFullYear();
+    const month = d.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const dates = Array.from({ length: daysInMonth }, (_, i) =>
+      isoDate(new Date(year, month, i + 1))
+    );
+    return {
+      label: d.toLocaleDateString('en-US', { month: 'short' }),
+      dates,
+    };
+  });
+}
+
 interface Props {
   visible: boolean;
   onClose: () => void;
@@ -124,8 +141,16 @@ export default function KicksHistoryModal({ visible, onClose }: Props) {
         label: w.label,
         count: w.dates.reduce((sum, d) => sum + (counts[d] ?? 0), 0),
       }));
-    } else {
+    } else if (tl === '6m') {
       const months = buildMonths6();
+      const allDates = months.flatMap((m) => m.dates);
+      const counts = await loadKicksForDates(allDates);
+      result = months.map((m) => ({
+        label: m.label,
+        count: m.dates.reduce((sum, d) => sum + (counts[d] ?? 0), 0),
+      }));
+    } else {
+      const months = buildMonths9();
       const allDates = months.flatMap((m) => m.dates);
       const counts = await loadKicksForDates(allDates);
       result = months.map((m) => ({
@@ -149,6 +174,7 @@ export default function KicksHistoryModal({ visible, onClose }: Props) {
     { id: '7d', label: '7 Days' },
     { id: '4w', label: '4 Weeks' },
     { id: '6m', label: '6 Months' },
+    { id: '9m', label: '9 Months' },
   ];
 
   return (
