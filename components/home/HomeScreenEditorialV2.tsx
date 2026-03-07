@@ -1,17 +1,19 @@
 /**
- * HomeScreenEditorialV2 — Pixelnahe Rekonstruktion des Mock-ups.
- * Rein präsentationsorientiert, minimale Datenbindung.
- * Keine Wiederverwendung alter Home- oder Editorial-Komponenten.
+ * HomeScreenEditorialV2
+ * Ziel: deutlich näher an das Mock-up.
+ * Fokus: ruhigere Typografie, dichteres Spacing, subtilerer Header,
+ * weicherer Hero, elegantere Karten, weniger utilitaristisch.
  */
-import React, { useState, useEffect, useCallback } from 'react';
+
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  useWindowDimensions,
   Share,
+  useWindowDimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,38 +30,56 @@ import {
 } from '../../utils/date';
 import { loadJSON, saveJSON } from '../../utils/storage';
 
-// ─── Design Tokens (Mock-up-nah) ───────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// TOKENS — enger am Mock-up
+// ─────────────────────────────────────────────────────────────────────────────
 const BG = '#F8F4EE';
-const SURFACE = '#F5F2EC';
-const SURFACE_MUTED = '#EFE9E0';
-const TEXT = '#2C2521';
-const TEXT_MUTED = '#8F8072';
-const ACCENT = '#B8A088';
-const CARD_RADIUS = 28;
-const HERO_RADIUS = 36;
+const SURFACE = '#F4EFE8';
+const SURFACE_SOFT = '#F1EBE3';
+const SURFACE_CARD = '#EEE7DD';
+const CHIP = 'rgba(255,255,255,0.56)';
+const CHIP_DARK = 'rgba(60, 45, 32, 0.055)';
 
-// ─── 1. Top Header ─────────────────────────────────────────────────────────
+const TEXT = '#2E2723';
+const TEXT_SOFT = '#9B8D81';
+const TEXT_MUTED = '#B5A79A';
+const ACCENT = '#C2A88E';
+const ACCENT_DARK = '#AF947A';
+const BORDER = 'rgba(114, 90, 66, 0.08)';
+
+const HERO_RADIUS = 34;
+const CARD_RADIUS = 30;
+const INPUT_RADIUS = 22;
+const BUTTON_RADIUS = 31;
+
+const H_PADDING = 20;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HEADER
+// ─────────────────────────────────────────────────────────────────────────────
 function V2Header() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
   return (
-    <View style={[headerStyles.container, { paddingTop: insets.top + 16 }]}>
+    <View style={[headerStyles.container, { paddingTop: insets.top + 12 }]}>
       <View style={headerStyles.left}>
         <View style={headerStyles.iconCircle}>
-          <Ionicons name="heart" size={16} color={ACCENT} />
+          <Ionicons name="heart" size={16} color={ACCENT_DARK} />
         </View>
+
         <Text style={headerStyles.brand}>
           <Text style={headerStyles.brandBold}>Mommy</Text>
           <Text style={headerStyles.brandLight}>Count</Text>
         </Text>
       </View>
+
       <TouchableOpacity
         style={headerStyles.settingsBtn}
         onPress={() => router.push('/(tabs)/profile')}
-        activeOpacity={0.7}
+        activeOpacity={0.8}
       >
-        <Ionicons name="menu-outline" size={22} color={TEXT_MUTED} />
+        <Ionicons name="settings-outline" size={19} color={TEXT_SOFT} />
       </TouchableOpacity>
     </View>
   );
@@ -67,48 +87,50 @@ function V2Header() {
 
 const headerStyles = StyleSheet.create({
   container: {
+    paddingHorizontal: H_PADDING,
+    paddingBottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingBottom: 20,
   },
   left: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
   },
   iconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: SURFACE_MUTED,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: SURFACE_SOFT,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 12,
   },
   brand: {
-    fontSize: 24,
-    letterSpacing: -0.5,
+    fontSize: 22,
+    letterSpacing: -0.35,
   },
   brandBold: {
-    fontWeight: '600',
+    fontWeight: '700',
     color: TEXT,
   },
   brandLight: {
     fontWeight: '300',
-    color: TEXT_MUTED,
+    color: TEXT_SOFT,
   },
   settingsBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: SURFACE_MUTED,
+    backgroundColor: SURFACE_SOFT,
     alignItems: 'center',
     justifyContent: 'center',
   },
 });
 
-// ─── 2. Hero Block ─────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// HERO
+// ─────────────────────────────────────────────────────────────────────────────
 function V2HeroBlock({
   weeks,
   days,
@@ -135,49 +157,46 @@ function V2HeroBlock({
   onEdit?: () => void;
 }) {
   const { height: screenHeight } = useWindowDimensions();
-  const heroHeight = Math.max(Math.min(screenHeight * 0.49, 490), 380);
+  const heroHeight = 430;
 
-  const pad = (n: number) => String(n).padStart(2, '0');
-
-  const gradient = ['#F7F2EA', '#EFE7DC', '#E7DDCF', '#DDD1C2'] as const;
-  const overlay = ['rgba(255,255,255,0.35)', 'rgba(92,74,52,0.04)'] as const;
+  const pad = (n: number) => String(Math.max(0, n)).padStart(2, '0');
 
   return (
-    <View style={[heroStyles.outer, { marginBottom: 24 }]}>
-      <View style={[heroStyles.shadow, { height: heroHeight + 20 }]} />
+    <View style={heroStyles.outer}>
+      <View style={[heroStyles.shadowBack, { height: heroHeight + 16 }]} />
       <View style={[heroStyles.card, { minHeight: heroHeight }]}>
-        <LinearGradient colors={gradient} style={StyleSheet.absoluteFillObject} />
         <LinearGradient
-          colors={overlay}
-          start={{ x: 0.1, y: 0.05 }}
-          end={{ x: 0.9, y: 1 }}
+          colors={['#F6F1E9', '#EFE7DC', '#E7DDD0']}
+          start={{ x: 0.04, y: 0.04 }}
+          end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFillObject}
         />
-        <View style={heroStyles.glow1} />
-        <View style={heroStyles.glow2} />
-        <View style={heroStyles.glow3} />
-        <View style={heroStyles.noise} />
+
+        <View style={heroStyles.textureTopLeft} />
+        <View style={heroStyles.textureMidRight} />
+        <View style={heroStyles.textureBottomCenter} />
+        <View style={heroStyles.softWash} />
+        <View style={heroStyles.bottomWarmBand} />
 
         <View style={heroStyles.topRow}>
           <View style={heroStyles.badge}>
             <Text style={heroStyles.badgeText}>{genderLabel}</Text>
-            {isPremium && (
-              <Ionicons name="star" size={11} color="#B99773" style={{ marginLeft: 6 }} />
-            )}
+            {isPremium ? (
+              <Ionicons name="star" size={11} color={ACCENT_DARK} style={{ marginLeft: 6 }} />
+            ) : null}
           </View>
-          <TouchableOpacity
-            style={heroStyles.editBtn}
-            onPress={onEdit}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="pencil" size={18} color={TEXT_MUTED} />
+
+          <TouchableOpacity style={heroStyles.editBtn} onPress={onEdit} activeOpacity={0.82}>
+            <Ionicons name="pencil" size={18} color={TEXT_SOFT} />
           </TouchableOpacity>
         </View>
 
         {!countdownStarted ? (
           <View style={heroStyles.emptyState}>
             <Text style={heroStyles.headline}>Ready to start?</Text>
-            <Text style={heroStyles.emptySub}>Set your dates and begin your countdown.</Text>
+            <Text style={heroStyles.emptySub}>
+              Set your dates and begin your countdown.
+            </Text>
             <TouchableOpacity
               style={heroStyles.cta}
               onPress={onScrollToDetails}
@@ -205,7 +224,7 @@ function V2HeroBlock({
             </View>
 
             <TouchableOpacity style={heroStyles.cta} onPress={onShare} activeOpacity={0.9}>
-              <Ionicons name="share-outline" size={20} color="#fff" />
+              <Ionicons name="share-outline" size={18} color="#fff" />
               <Text style={heroStyles.ctaText}>Share our countdown</Text>
             </TouchableOpacity>
           </>
@@ -226,63 +245,69 @@ function HeroUnit({ value, label }: { value: string; label: string }) {
 
 const heroStyles = StyleSheet.create({
   outer: {
-    marginHorizontal: 20,
-    marginTop: 8,
+    marginHorizontal: H_PADDING,
+    marginTop: 10,
+    marginBottom: 22,
   },
-  shadow: {
+  shadowBack: {
     position: 'absolute',
     top: 16,
-    left: 12,
-    right: 12,
-    borderRadius: HERO_RADIUS,
-    backgroundColor: 'rgba(120,96,72,0.12)',
-    opacity: 0.5,
-    transform: [{ scaleY: 0.98 }],
-    shadowColor: '#7e6b57',
+    left: 10,
+    right: 10,
+    borderRadius: HERO_RADIUS + 2,
+    backgroundColor: 'rgba(130, 109, 86, 0.10)',
+    shadowColor: '#876F58',
     shadowOffset: { width: 0, height: 24 },
     shadowOpacity: 0.06,
-    shadowRadius: 32,
+    shadowRadius: 28,
     elevation: 8,
   },
   card: {
     borderRadius: HERO_RADIUS,
     overflow: 'hidden',
-    paddingHorizontal: 28,
-    paddingTop: 24,
-    paddingBottom: 28,
-    justifyContent: 'space-between',
-    backgroundColor: '#EFE8DD',
+    backgroundColor: SURFACE,
+    paddingTop: 22,
+    paddingBottom: 22,
+    paddingHorizontal: 20,
   },
-  glow1: {
+  textureTopLeft: {
     position: 'absolute',
-    width: 260,
-    height: 200,
-    borderRadius: 999,
-    top: -20,
-    left: -40,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-  },
-  glow2: {
-    position: 'absolute',
-    width: 300,
+    width: 320,
     height: 220,
     borderRadius: 999,
-    bottom: 40,
-    right: -80,
-    backgroundColor: 'rgba(199,177,152,0.12)',
+    top: -6,
+    left: -70,
+    backgroundColor: 'rgba(255,255,255,0.22)',
   },
-  glow3: {
+  textureMidRight: {
     position: 'absolute',
-    width: 160,
-    height: 160,
+    width: 250,
+    height: 180,
     borderRadius: 999,
-    top: 100,
-    right: 10,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    top: 94,
+    right: -34,
+    backgroundColor: 'rgba(233,223,209,0.42)',
   },
-  noise: {
+  textureBottomCenter: {
+    position: 'absolute',
+    width: 210,
+    height: 170,
+    borderRadius: 999,
+    bottom: 56,
+    left: 148,
+    backgroundColor: 'rgba(213,197,178,0.18)',
+  },
+  softWash: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(255,255,255,0.045)',
+  },
+  bottomWarmBand: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 132,
+    backgroundColor: 'rgba(192, 170, 145, 0.06)',
   },
   topRow: {
     flexDirection: 'row',
@@ -290,12 +315,12 @@ const heroStyles = StyleSheet.create({
     alignItems: 'center',
   },
   badge: {
+    height: 40,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    backgroundColor: CHIP,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.5)',
   },
   badgeText: {
     fontSize: 12,
@@ -307,93 +332,104 @@ const heroStyles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.45)',
+    backgroundColor: 'rgba(255,255,255,0.40)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   headline: {
-    fontSize: 30,
-    fontWeight: '300',
-    color: TEXT_MUTED,
-    textAlign: 'center',
-    marginTop: 16,
+    marginTop: 18,
     marginBottom: 18,
+    textAlign: 'center',
+    fontSize: 30,
+    lineHeight: 36,
+    fontWeight: '300',
+    color: TEXT_SOFT,
+    letterSpacing: -0.8,
   },
   countdownRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 18,
   },
   unit: {
-    minWidth: 82,
+    minWidth: 88,
     alignItems: 'center',
   },
   unitValue: {
-    fontSize: 70,
-    fontWeight: '200',
-    letterSpacing: -2,
-    fontVariant: ['tabular-nums'],
+    fontSize: 78,
+    lineHeight: 82,
+    fontWeight: '300',
+    letterSpacing: -2.6,
     color: TEXT,
+    fontVariant: ['tabular-nums'],
   },
   unitLabel: {
     marginTop: 6,
-    fontSize: 12,
-    fontWeight: '500',
-    letterSpacing: 1.5,
-    color: TEXT_MUTED,
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '600',
+    letterSpacing: 2,
+    color: TEXT_SOFT,
   },
   divider: {
     width: 1,
-    height: 64,
-    backgroundColor: 'rgba(89,74,57,0.08)',
-    marginHorizontal: 16,
+    height: 58,
+    marginHorizontal: 14,
+    backgroundColor: 'rgba(111, 91, 69, 0.08)',
   },
   timerPill: {
     alignSelf: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 24,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    marginBottom: 24,
+    width: 150,
+    height: 62,
+    borderRadius: 22,
+    marginBottom: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: CHIP_DARK,
   },
   timerText: {
     fontSize: 28,
+    lineHeight: 32,
     fontWeight: '300',
-    fontVariant: ['tabular-nums'],
     color: TEXT,
-    letterSpacing: 0.5,
+    fontVariant: ['tabular-nums'],
+    letterSpacing: 0.2,
   },
   cta: {
-    minHeight: 60,
-    borderRadius: 30,
+    height: 62,
+    borderRadius: BUTTON_RADIUS,
     backgroundColor: ACCENT,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
   },
   ctaText: {
-    color: '#fff',
-    fontSize: 17,
+    marginLeft: 9,
+    fontSize: 16,
+    lineHeight: 19,
     fontWeight: '600',
-    letterSpacing: 0.2,
+    color: '#fff',
+    letterSpacing: 0.1,
   },
   emptyState: {
-    flex: 1,
-    justifyContent: 'center',
+    paddingTop: 34,
+    paddingBottom: 10,
     alignItems: 'center',
-    paddingVertical: 32,
+    justifyContent: 'center',
   },
   emptySub: {
-    fontSize: 16,
-    color: TEXT_MUTED,
+    fontSize: 15,
+    lineHeight: 22,
+    color: TEXT_SOFT,
     textAlign: 'center',
-    marginBottom: 28,
+    marginBottom: 22,
   },
 });
 
-// ─── 3. Time remaining ────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// TIME REMAINING
+// ─────────────────────────────────────────────────────────────────────────────
 type TimeMode = 'days' | 'weeks' | 'hours';
 const MODES: TimeMode[] = ['days', 'weeks', 'hours'];
 
@@ -426,6 +462,7 @@ function V2TimeRemaining({
       : mode === 'weeks'
       ? weekDay.weeks
       : timeData.days * 24 + timeData.hours;
+
   const unit = mode === 'days' ? 'days' : mode === 'weeks' ? 'weeks' : 'hours';
   const nextMode = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
 
@@ -433,68 +470,62 @@ function V2TimeRemaining({
     <TouchableOpacity
       style={timeStyles.container}
       onPress={countdownStarted ? cycle : undefined}
-      activeOpacity={countdownStarted ? 0.8 : 1}
+      activeOpacity={countdownStarted ? 0.82 : 1}
     >
       <Text style={timeStyles.label}>Time remaining</Text>
-      {countdownStarted && (
-        <Text style={timeStyles.tapHint}>Tap for {nextMode}</Text>
-      )}
-      {countdownStarted ? (
-        <View style={timeStyles.row}>
-          <Text style={timeStyles.number}>{value}</Text>
-          <Text style={timeStyles.unit}>{unit}</Text>
-        </View>
-      ) : (
-        <Text style={timeStyles.muted}>—</Text>
-      )}
+      {countdownStarted ? <Text style={timeStyles.tapHint}>Tap for {nextMode}</Text> : null}
+
+      <View style={timeStyles.row}>
+        <Text style={timeStyles.number}>{countdownStarted ? value : '—'}</Text>
+        {countdownStarted ? <Text style={timeStyles.unit}>{unit}</Text> : null}
+      </View>
     </TouchableOpacity>
   );
 }
 
 const timeStyles = StyleSheet.create({
   container: {
-    marginHorizontal: 20,
-    marginBottom: 40,
-    paddingVertical: 16,
+    marginHorizontal: H_PADDING,
+    marginBottom: 26,
   },
   label: {
-    fontSize: 13,
+    fontSize: 12,
+    lineHeight: 16,
     fontWeight: '600',
-    letterSpacing: 0.8,
-    color: TEXT_MUTED,
+    letterSpacing: 0.9,
+    color: TEXT_SOFT,
     marginBottom: 4,
   },
   tapHint: {
     fontSize: 11,
+    lineHeight: 15,
     color: TEXT_MUTED,
-    marginBottom: 16,
-    opacity: 0.8,
+    marginBottom: 12,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: 8,
   },
   number: {
-    fontSize: 52,
-    fontWeight: '200',
-    fontVariant: ['tabular-nums'],
-    letterSpacing: -2,
+    fontSize: 64,
+    lineHeight: 68,
+    fontWeight: '300',
     color: TEXT,
+    letterSpacing: -2.3,
+    fontVariant: ['tabular-nums'],
+    marginRight: 6,
   },
   unit: {
-    fontSize: 20,
+    fontSize: 22,
+    lineHeight: 26,
     fontWeight: '300',
-    color: TEXT_MUTED,
-  },
-  muted: {
-    fontSize: 52,
-    fontWeight: '200',
-    color: TEXT_MUTED,
+    color: TEXT_SOFT,
   },
 });
 
-// ─── 4. Journey progress ───────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// JOURNEY PROGRESS
+// ─────────────────────────────────────────────────────────────────────────────
 function V2JourneyProgress({
   percent,
   startLabel,
@@ -510,9 +541,11 @@ function V2JourneyProgress({
         <Text style={journeyStyles.title}>Journey progress</Text>
         <Text style={journeyStyles.percent}>{percent}%</Text>
       </View>
+
       <View style={journeyStyles.track}>
         <View style={[journeyStyles.fill, { width: `${percent}%` }]} />
       </View>
+
       <View style={journeyStyles.dateRow}>
         <Text style={journeyStyles.dateText}>Start {startLabel}</Text>
         <Text style={journeyStyles.dateText}>Due {dueLabel}</Text>
@@ -523,59 +556,58 @@ function V2JourneyProgress({
 
 const journeyStyles = StyleSheet.create({
   card: {
-    marginHorizontal: 20,
-    marginBottom: 40,
-    padding: 26,
-    backgroundColor: SURFACE_MUTED,
-    borderRadius: CARD_RADIUS,
-    borderWidth: 0,
-    shadowColor: '#8B7355',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 2,
+    marginHorizontal: H_PADDING,
+    marginBottom: 26,
+    padding: 22,
+    backgroundColor: '#F0E9DF',
+    borderRadius: 28,
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 16,
   },
   title: {
     fontSize: 12,
+    lineHeight: 16,
     fontWeight: '600',
-    letterSpacing: 1,
-    color: TEXT_MUTED,
+    letterSpacing: 0.95,
+    color: TEXT_SOFT,
   },
   percent: {
     fontSize: 18,
+    lineHeight: 22,
     fontWeight: '300',
-    color: ACCENT,
+    color: ACCENT_DARK,
   },
   track: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(0,0,0,0.06)',
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: 'rgba(92, 74, 52, 0.08)',
     overflow: 'hidden',
+    marginBottom: 16,
   },
   fill: {
-    height: 6,
-    borderRadius: 3,
+    height: 8,
+    borderRadius: 999,
     backgroundColor: ACCENT,
   },
   dateRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 14,
   },
   dateText: {
     fontSize: 14,
+    lineHeight: 18,
     fontWeight: '500',
-    color: TEXT_MUTED,
+    color: '#8E8072',
   },
 });
 
-// ─── 5. Your pregnancy ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// PREGNANCY
+// ─────────────────────────────────────────────────────────────────────────────
 function V2PregnancyDetails({
   startDate,
   dueDate,
@@ -592,30 +624,37 @@ function V2PregnancyDetails({
   return (
     <View style={pregnancyStyles.section}>
       <Text style={pregnancyStyles.title}>Your pregnancy</Text>
+
       <View style={pregnancyStyles.card}>
         <View style={pregnancyStyles.row}>
           <Text style={pregnancyStyles.label}>Start date</Text>
-          <TouchableOpacity style={pregnancyStyles.value} onPress={() => router.push('/(tabs)/design')}>
-            <Text style={pregnancyStyles.valueText}>{formatDateShort(startDate)}</Text>
-            <Ionicons name="calendar-outline" size={20} color={ACCENT} />
-          </TouchableOpacity>
-        </View>
-        <View style={[pregnancyStyles.row, pregnancyStyles.rowTop]}>
-          <Text style={pregnancyStyles.label}>Due date</Text>
-          <TouchableOpacity style={pregnancyStyles.value} onPress={() => router.push('/(tabs)/design')}>
-            <Text style={pregnancyStyles.valueText}>{formatDateShort(dueDate)}</Text>
-            <Ionicons name="calendar" size={20} color={ACCENT} />
-          </TouchableOpacity>
-        </View>
-        {!countdownStarted && (
           <TouchableOpacity
-            style={pregnancyStyles.cta}
-            onPress={onStartCountdown}
-            activeOpacity={0.9}
+            style={pregnancyStyles.value}
+            onPress={() => router.push('/(tabs)/profile')}
+            activeOpacity={0.82}
           >
+            <Text style={pregnancyStyles.valueText}>{formatDateShort(startDate)}</Text>
+            <Ionicons name="calendar-outline" size={22} color={ACCENT_DARK} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={pregnancyStyles.row}>
+          <Text style={pregnancyStyles.label}>Due date</Text>
+          <TouchableOpacity
+            style={pregnancyStyles.value}
+            onPress={() => router.push('/(tabs)/profile')}
+            activeOpacity={0.82}
+          >
+            <Text style={pregnancyStyles.valueText}>{formatDateShort(dueDate)}</Text>
+            <Ionicons name="calendar" size={22} color={ACCENT_DARK} />
+          </TouchableOpacity>
+        </View>
+
+        {!countdownStarted ? (
+          <TouchableOpacity style={pregnancyStyles.cta} onPress={onStartCountdown} activeOpacity={0.9}>
             <Text style={pregnancyStyles.ctaText}>Start countdown</Text>
           </TouchableOpacity>
-        )}
+        ) : null}
       </View>
     </View>
   );
@@ -623,73 +662,72 @@ function V2PregnancyDetails({
 
 const pregnancyStyles = StyleSheet.create({
   section: {
-    marginHorizontal: 20,
-    marginBottom: 40,
+    marginHorizontal: H_PADDING,
+    marginBottom: 24,
   },
   title: {
     fontSize: 12,
+    lineHeight: 16,
     fontWeight: '600',
-    letterSpacing: 1,
-    color: TEXT_MUTED,
+    letterSpacing: 0.95,
+    color: TEXT_SOFT,
     marginBottom: 14,
   },
   card: {
-    padding: 24,
-    backgroundColor: SURFACE_MUTED,
-    borderRadius: CARD_RADIUS,
-    borderWidth: 0,
-    shadowColor: '#8B7355',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 2,
+    backgroundColor: '#EEE7DD',
+    borderRadius: 30,
+    padding: 20,
   },
   row: {
     marginBottom: 16,
   },
-  rowTop: {
-    marginBottom: 0,
-  },
   label: {
-    fontSize: 11,
+    fontSize: 12,
+    lineHeight: 16,
     fontWeight: '600',
-    letterSpacing: 0.8,
-    color: TEXT_MUTED,
+    letterSpacing: 0.7,
+    color: TEXT_SOFT,
     marginBottom: 8,
   },
   value: {
+    minHeight: 74,
+    borderRadius: INPUT_RADIUS,
+    backgroundColor: 'rgba(255,255,255,0.82)',
+    paddingHorizontal: 18,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.75)',
   },
   valueText: {
-    fontSize: 17,
+    fontSize: 20,
+    lineHeight: 24,
     fontWeight: '500',
     color: TEXT,
+    letterSpacing: -0.4,
   },
   cta: {
-    marginTop: 22,
-    paddingVertical: 16,
-    borderRadius: 24,
+    marginTop: 6,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: ACCENT,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   ctaText: {
-    fontSize: 15,
-    fontWeight: '600',
     color: '#fff',
+    fontSize: 15,
+    lineHeight: 18,
+    fontWeight: '600',
   },
 });
 
-// ─── 6. Gender selection ───────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// GENDER
+// ─────────────────────────────────────────────────────────────────────────────
 const GENDERS = [
-  { key: 'boy' as const, label: 'Boy', icon: 'male' as const },
-  { key: 'girl' as const, label: 'Girl', icon: 'female' as const },
-  { key: 'surprise' as const, label: 'Surprise', icon: 'gift' as const },
+  { key: 'boy' as const, label: 'Boy', icon: 'male-outline' as const },
+  { key: 'girl' as const, label: 'Girl', icon: 'female-outline' as const },
+  { key: 'surprise' as const, label: 'Surprise', icon: 'gift-outline' as const },
 ] as const;
 
 function V2GenderSelector({
@@ -702,23 +740,24 @@ function V2GenderSelector({
   return (
     <View style={genderStyles.section}>
       <Text style={genderStyles.title}>It's a...</Text>
+
       <View style={genderStyles.row}>
         {GENDERS.map((g) => {
           const isSelected = selected === g.key;
+
           return (
             <TouchableOpacity
               key={g.key}
               style={[genderStyles.option, isSelected && genderStyles.optionSelected]}
               onPress={() => onSelect(g.key)}
-              activeOpacity={0.7}
+              activeOpacity={0.78}
             >
-              <View style={genderStyles.iconWrap}>
-                <Ionicons
-                  name={g.icon}
-                  size={28}
-                  color={isSelected ? ACCENT : TEXT_MUTED}
-                />
-              </View>
+              <Ionicons
+                name={g.icon}
+                size={34}
+                color={isSelected ? ACCENT_DARK : '#A79B8F'}
+                style={{ marginBottom: 12 }}
+              />
               <Text style={[genderStyles.label, isSelected && genderStyles.labelSelected]}>
                 {g.label}
               </Text>
@@ -732,49 +771,48 @@ function V2GenderSelector({
 
 const genderStyles = StyleSheet.create({
   section: {
-    marginHorizontal: 20,
-    marginBottom: 40,
+    marginHorizontal: H_PADDING,
+    marginBottom: 24,
   },
   title: {
     fontSize: 12,
+    lineHeight: 16,
     fontWeight: '600',
-    letterSpacing: 1,
-    color: TEXT_MUTED,
+    letterSpacing: 0.95,
+    color: TEXT_SOFT,
     marginBottom: 14,
   },
   row: {
     flexDirection: 'row',
-    gap: 14,
+    justifyContent: 'space-between',
   },
   option: {
-    flex: 1,
+    width: '31.5%',
+    height: 120,
+    borderRadius: 24,
+    backgroundColor: SURFACE_SOFT,
     alignItems: 'center',
-    paddingVertical: 26,
-    borderRadius: CARD_RADIUS,
-    backgroundColor: SURFACE_MUTED,
-    borderWidth: 1,
-    borderColor: 'transparent',
+    justifyContent: 'center',
   },
   optionSelected: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderColor: 'rgba(184,160,136,0.4)',
-    borderWidth: 1.5,
-  },
-  iconWrap: {
-    marginBottom: 10,
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    borderWidth: 1.2,
+    borderColor: 'rgba(184,160,136,0.36)',
   },
   label: {
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-    color: TEXT_MUTED,
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '500',
+    color: '#A79B8F',
   },
   labelSelected: {
-    color: ACCENT,
+    color: ACCENT_DARK,
   },
 });
 
-// ─── 7. Customize CTA ────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// CTA
+// ─────────────────────────────────────────────────────────────────────────────
 function V2CustomizeCTA() {
   const router = useRouter();
 
@@ -784,12 +822,13 @@ function V2CustomizeCTA() {
       <Text style={customizeStyles.subtitle}>
         Personalize your countdown with fonts, colors, and photos
       </Text>
+
       <TouchableOpacity
         style={customizeStyles.cta}
         onPress={() => router.push('/(tabs)/design')}
         activeOpacity={0.9}
       >
-        <Ionicons name="pencil" size={18} color="#fff" />
+        <Ionicons name="pencil-outline" size={18} color="#fff" />
         <Text style={customizeStyles.ctaText}>Customize design</Text>
       </TouchableOpacity>
     </View>
@@ -798,62 +837,61 @@ function V2CustomizeCTA() {
 
 const customizeStyles = StyleSheet.create({
   card: {
-    marginHorizontal: 20,
-    marginBottom: 120,
-    padding: 28,
-    backgroundColor: SURFACE_MUTED,
-    borderRadius: CARD_RADIUS,
-    borderWidth: 0,
-    shadowColor: '#8B7355',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 2,
+    marginHorizontal: H_PADDING,
+    marginBottom: 110,
+    backgroundColor: '#EFE8DE',
+    borderRadius: 30,
+    padding: 24,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight: '400',
     color: TEXT,
-    marginBottom: 8,
+    letterSpacing: -0.8,
+    marginBottom: 12,
   },
   subtitle: {
-    fontSize: 14,
-    lineHeight: 22,
-    color: TEXT_MUTED,
-    marginBottom: 24,
+    fontSize: 16,
+    lineHeight: 24,
+    color: TEXT_SOFT,
+    marginBottom: 22,
   },
   cta: {
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: ACCENT,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
-    paddingVertical: 16,
-    borderRadius: 24,
-    backgroundColor: ACCENT,
   },
   ctaText: {
-    fontSize: 15,
+    marginLeft: 10,
+    fontSize: 16,
+    lineHeight: 19,
     fontWeight: '600',
     color: '#fff',
   },
 });
 
-// ─── Main Screen ───────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN SCREEN
+// ─────────────────────────────────────────────────────────────────────────────
 export default function HomeScreenEditorialV2() {
   const { profile, updateProfile } = useProfile();
   const router = useRouter();
-  const scrollRef = React.useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollView>(null);
 
   const dueDate = profile?.dueDate ?? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
   const startDate =
     profile?.startDate ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const countdownStarted = profile?.countdownStarted === true;
-  const gender = profile?.gender ?? 'boy';
+  const gender = (profile?.gender as 'boy' | 'girl' | 'surprise') ?? 'boy';
   const isPremium = false;
 
-  const weekDay = getWeeksAndDays(dueDate);
+  const weekDay = useMemo(() => getWeeksAndDays(dueDate), [dueDate]);
   const [time, setTime] = useState(() => getTimeUntilDueMs(dueDate));
-  const percent = getJourneyProgress(startDate, dueDate);
+  const percent = useMemo(() => getJourneyProgress(startDate, dueDate), [startDate, dueDate]);
 
   useEffect(() => {
     if (!countdownStarted) return;
@@ -868,7 +906,7 @@ export default function HomeScreenEditorialV2() {
   }, [weekDay]);
 
   const scrollToDetails = useCallback(() => {
-    scrollRef.current?.scrollTo({ y: 600, animated: true });
+    scrollRef.current?.scrollTo({ y: 620, animated: true });
   }, []);
 
   const handleStartCountdown = useCallback(() => {
@@ -885,7 +923,7 @@ export default function HomeScreenEditorialV2() {
       <ScrollView
         ref={scrollRef}
         style={screenStyles.scroll}
-        contentContainerStyle={screenStyles.scrollContent}
+        contentContainerStyle={screenStyles.content}
         showsVerticalScrollIndicator={false}
       >
         <V2HeroBlock
@@ -921,7 +959,10 @@ export default function HomeScreenEditorialV2() {
           onStartCountdown={handleStartCountdown}
         />
 
-        <V2GenderSelector selected={gender} onSelect={(g) => updateProfile?.({ gender: g })} />
+        <V2GenderSelector
+          selected={gender}
+          onSelect={(g) => updateProfile?.({ gender: g })}
+        />
 
         <V2CustomizeCTA />
       </ScrollView>
@@ -936,9 +977,10 @@ const screenStyles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
+    backgroundColor: BG,
   },
-  scrollContent: {
-    paddingTop: 4,
-    paddingBottom: 40,
+  content: {
+    paddingTop: 0,
+    paddingBottom: 18,
   },
 });
