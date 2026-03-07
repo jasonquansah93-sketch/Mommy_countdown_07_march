@@ -20,6 +20,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDesign } from '../../context/DesignContext';
+import { useProfile } from '../../context/ProfileContext';
 import { loadJSON, saveJSON } from '../../utils/storage';
 import { RADIUS, SHADOW } from '../../constants/tokens';
 
@@ -35,10 +36,18 @@ interface Props {
   onClose: () => void;
 }
 
+const DEFAULT_SALUTATION = 'Dear little one,';
+
+function getDefaultSalutation(babyName: string | undefined): string {
+  const name = babyName?.trim();
+  return name ? `Dear ${name},` : DEFAULT_SALUTATION;
+}
+
 export default function TimeCapsuleModal({ visible, onClose }: Props) {
   const { colors } = useDesign();
+  const { profile } = useProfile();
   const insets = useSafeAreaInsets();
-  const [salutation, setSalutation] = useState('Dear little one,');
+  const [salutation, setSalutation] = useState(DEFAULT_SALUTATION);
   const [letter, setLetter] = useState('');
   const [saved, setSaved] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -47,7 +56,11 @@ export default function TimeCapsuleModal({ visible, onClose }: Props) {
     if (visible) {
       loadJSON<LetterData>(LETTER_KEY).then((stored) => {
         if (stored?.body) setLetter(stored.body);
-        if (stored?.salutation) setSalutation(stored.salutation);
+        if (stored?.salutation) {
+          setSalutation(stored.salutation);
+        } else {
+          setSalutation(getDefaultSalutation(profile.name));
+        }
       });
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -59,7 +72,7 @@ export default function TimeCapsuleModal({ visible, onClose }: Props) {
     } else {
       fadeAnim.setValue(0);
     }
-  }, [visible]);
+  }, [visible, profile.name]);
 
   const handleSave = async () => {
     await saveJSON<LetterData>(LETTER_KEY, { salutation, body: letter });
