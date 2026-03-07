@@ -1,37 +1,39 @@
+/**
+ * HomeScreenEditorial — Redesign des Home Screens im Editorial-Stil.
+ * Phase 1: Gleicher Inhalt, neue visuelle Sprache.
+ * Warm, clean, editorial, mehr Luft.
+ */
 import React, { useRef, useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, Animated } from 'react-native';
 import { useProfile } from '../../context/ProfileContext';
 import { useDesign } from '../../context/DesignContext';
-import GradientHeader from '../../components/home/GradientHeader';
-import HeroCountdownCard from '../../components/home/HeroCountdownCard';
-import TimeRemainingCard from '../../components/home/TimeRemainingCard';
-import JourneyProgress from '../../components/home/JourneyProgress';
-import PregnancyDetailsCard from '../../components/home/PregnancyDetailsCard';
-import GenderSelector from '../../components/home/GenderSelector';
-import CustomizeCTA from '../../components/home/CustomizeCTA';
-import ScreenBackground from '../../components/shared/ScreenBackground';
-import HomeScreenEditorial from '../../components/home/HomeScreenEditorial';
+import { EditorialScreen, EditorialHeader } from '../editorial';
+import HeroCountdownCard from './HeroCountdownCard';
+import TimeRemainingCard from './TimeRemainingCard';
+import JourneyProgress from './JourneyProgress';
+import PregnancyDetailsCard from './PregnancyDetailsCard';
+import GenderSelector from './GenderSelector';
+import CustomizeCTA from './CustomizeCTA';
 import { useSessionEntrance } from '../../utils/entrance';
-import MilestoneCelebrationModal from '../../components/modals/MilestoneCelebrationModal';
+import MilestoneCelebrationModal from '../modals/MilestoneCelebrationModal';
 import { getDaysRemaining } from '../../utils/date';
 import { loadJSON, saveJSON } from '../../utils/storage';
-import { USE_EDITORIAL_HOME } from '../../constants/editorialFeature';
+import { EDITORIAL_SPACING } from '../../theme/editorialTheme';
 
-// Days-to-go that trigger a milestone celebration
 const CELEBRATION_DAYS = [200, 150, 100, 75, 50, 40, 30, 20, 14, 10, 7, 5, 3, 1];
 const CELEBRATED_KEY = 'celebrated_milestones_v1';
+const PREGNANCY_DETAILS_Y = 520;
 
-// Approximate Y position for scrolling to details section
-const PREGNANCY_DETAILS_Y = 480;
-
-// ─── Animated section wrappers ─────────────────────────────────────────────
-// Each section gets its own stagger index so they cascade beautifully on first open.
 function Section({ index, children }: { index: number; children: React.ReactNode }) {
   const { animStyle } = useSessionEntrance(index);
-  return <Animated.View style={animStyle}>{children}</Animated.View>;
+  return (
+    <Animated.View style={[animStyle, styles.section]}>
+      {children}
+    </Animated.View>
+  );
 }
 
-export default function HomeScreen() {
+export default function HomeScreenEditorial() {
   const { isLoaded, profile } = useProfile();
   const { colors } = useDesign();
   const scrollRef = useRef<ScrollView>(null);
@@ -63,31 +65,21 @@ export default function HomeScreen() {
   };
 
   if (isLoaded === false) {
-    if (USE_EDITORIAL_HOME) {
-      return (
-        <HomeScreenEditorial />
-      );
-    }
     return (
-      <ScreenBackground>
+      <EditorialScreen>
+        <EditorialHeader />
         <View style={styles.center}>
-          <Text style={{ color: colors.textSecondary }}>Loading...</Text>
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading...</Text>
         </View>
-      </ScreenBackground>
+      </EditorialScreen>
     );
   }
 
   const milestoneTitle =
-    celebrationDay === 1
-      ? 'Just 1 day to go!'
-      : `${celebrationDay} Days to Go`;
-
-  if (USE_EDITORIAL_HOME) {
-    return <HomeScreenEditorial />;
-  }
+    celebrationDay === 1 ? 'Just 1 day to go!' : `${celebrationDay} Days to Go`;
 
   return (
-    <ScreenBackground>
+    <EditorialScreen>
       <MilestoneCelebrationModal
         visible={celebrationVisible}
         milestoneTitle={milestoneTitle}
@@ -95,9 +87,8 @@ export default function HomeScreen() {
         onClose={() => setCelebrationVisible(false)}
       />
 
-      {/* Section 0: Header — arrives first */}
       <Section index={0}>
-        <GradientHeader />
+        <EditorialHeader />
       </Section>
 
       <ScrollView
@@ -106,51 +97,51 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Section 1: Hero Countdown Card */}
         <Section index={1}>
           <HeroCountdownCard onScrollToDetails={scrollToDetails} />
         </Section>
 
-        {/* Section 2: Time Remaining — the big floating number */}
         <Section index={2}>
           <TimeRemainingCard />
         </Section>
 
-        {/* Section 3: Journey Progress */}
         <Section index={3}>
           <JourneyProgress />
         </Section>
 
-        {/* Section 4: Pregnancy Details */}
         <Section index={4}>
           <PregnancyDetailsCard onCountdownStarted={scrollToTop} />
         </Section>
 
-        {/* Section 5: Gender Selector */}
         <Section index={5}>
           <GenderSelector />
         </Section>
 
-        {/* Section 6: Customize CTA */}
         <Section index={6}>
           <CustomizeCTA />
         </Section>
       </ScrollView>
-    </ScreenBackground>
+    </EditorialScreen>
   );
 }
 
 const styles = StyleSheet.create({
+  section: {
+    marginBottom: EDITORIAL_SPACING.sectionGap,
+  },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  loadingText: {
+    fontSize: 15,
+  },
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 16,
+    paddingTop: 8,
     paddingBottom: 120,
   },
 });
