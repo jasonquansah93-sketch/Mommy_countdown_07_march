@@ -1,19 +1,20 @@
 /**
- * HomeScreenEditorial — Redesign des Home Screens im Editorial-Stil.
- * Phase 1: Gleicher Inhalt, neue visuelle Sprache.
- * Warm, clean, editorial, mehr Luft.
+ * HomeScreenEditorial — Vollständiges Redesign des Home Screens.
+ * Phase 1B: Eigene Editorial-Komponenten, visuell deutlich anders.
  */
 import React, { useRef, useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, Animated } from 'react-native';
 import { useProfile } from '../../context/ProfileContext';
 import { useDesign } from '../../context/DesignContext';
 import { EditorialScreen, EditorialHeader } from '../editorial';
-import HeroCountdownCard from './HeroCountdownCard';
-import TimeRemainingCard from './TimeRemainingCard';
-import JourneyProgress from './JourneyProgress';
-import PregnancyDetailsCard from './PregnancyDetailsCard';
-import GenderSelector from './GenderSelector';
-import CustomizeCTA from './CustomizeCTA';
+import {
+  EditorialHeroCountdown,
+  EditorialTimeRemaining,
+  EditorialJourneyProgress,
+  EditorialPregnancyDetails,
+  EditorialGenderSelector,
+  EditorialCustomizeCTA,
+} from './editorial';
 import { useSessionEntrance } from '../../utils/entrance';
 import MilestoneCelebrationModal from '../modals/MilestoneCelebrationModal';
 import { getDaysRemaining } from '../../utils/date';
@@ -22,15 +23,11 @@ import { EDITORIAL_SPACING } from '../../theme/editorialTheme';
 
 const CELEBRATION_DAYS = [200, 150, 100, 75, 50, 40, 30, 20, 14, 10, 7, 5, 3, 1];
 const CELEBRATED_KEY = 'celebrated_milestones_v1';
-const PREGNANCY_DETAILS_Y = 520;
+const PREGNANCY_DETAILS_Y = 580;
 
 function Section({ index, children }: { index: number; children: React.ReactNode }) {
   const { animStyle } = useSessionEntrance(index);
-  return (
-    <Animated.View style={[animStyle, styles.section]}>
-      {children}
-    </Animated.View>
-  );
+  return <Animated.View style={[animStyle, styles.section]}>{children}</Animated.View>;
 }
 
 export default function HomeScreenEditorial() {
@@ -56,13 +53,8 @@ export default function HomeScreenEditorial() {
     });
   }, [profile?.dueDate, profile?.countdownStarted]);
 
-  const scrollToTop = () => {
-    scrollRef.current?.scrollTo({ y: 0, animated: true });
-  };
-
-  const scrollToDetails = () => {
-    scrollRef.current?.scrollTo({ y: PREGNANCY_DETAILS_Y, animated: true });
-  };
+  const scrollToTop = () => scrollRef.current?.scrollTo({ y: 0, animated: true });
+  const scrollToDetails = () => scrollRef.current?.scrollTo({ y: PREGNANCY_DETAILS_Y, animated: true });
 
   if (isLoaded === false) {
     return (
@@ -75,8 +67,7 @@ export default function HomeScreenEditorial() {
     );
   }
 
-  const milestoneTitle =
-    celebrationDay === 1 ? 'Just 1 day to go!' : `${celebrationDay} Days to Go`;
+  const milestoneTitle = celebrationDay === 1 ? 'Just 1 day to go!' : `${celebrationDay} Days to Go`;
 
   return (
     <EditorialScreen>
@@ -98,27 +89,27 @@ export default function HomeScreenEditorial() {
         showsVerticalScrollIndicator={false}
       >
         <Section index={1}>
-          <HeroCountdownCard onScrollToDetails={scrollToDetails} />
+          <EditorialHeroCountdown onScrollToDetails={scrollToDetails} />
         </Section>
 
         <Section index={2}>
-          <TimeRemainingCard />
+          <EditorialTimeRemaining />
         </Section>
 
         <Section index={3}>
-          <JourneyProgress />
+          <EditorialJourneyProgress />
         </Section>
 
         <Section index={4}>
-          <PregnancyDetailsCard onCountdownStarted={scrollToTop} />
+          <EditorialPregnancyDetails onCountdownStarted={scrollToTop} />
         </Section>
 
         <Section index={5}>
-          <GenderSelector />
+          <EditorialGenderSelector />
         </Section>
 
         <Section index={6}>
-          <CustomizeCTA />
+          <EditorialCustomizeCTA />
         </Section>
       </ScrollView>
     </EditorialScreen>
@@ -141,7 +132,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 8,
+    paddingTop: 4,
     paddingBottom: 120,
   },
 });

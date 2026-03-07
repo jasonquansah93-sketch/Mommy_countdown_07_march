@@ -47,7 +47,7 @@ export const EDITORIAL = {
 export const EDITORIAL_SPACING = {
   screenH: 20,
   cardGap: 20,
-  sectionGap: 36,
+  sectionGap: 44,
   cardPad: 24,
   heroPad: 32,
 } as const;
@@ -60,37 +60,37 @@ export const EDITORIAL_RADIUS = {
 } as const;
 
 export const EDITORIAL_SHADOW = {
-  /** Sehr weicher Schatten für Cards */
+  /** Sehr weicher Schatten — warm paper / linen feel */
   card: {
     shadowColor: '#8B7355',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 24,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 20,
+    elevation: 3,
   } as const,
-  /** Noch subtiler */
+  /** Noch subtiler — tonale Schichtung */
   subtle: {
     shadowColor: '#8B7355',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 12,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 1,
   } as const,
 } as const;
 
 export const EDITORIAL_TYPOGRAPHY = {
-  /** Headlines: klar und ruhig */
+  /** Hero headline — ruhig, editorial */
   headline: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '300' as const,
-    letterSpacing: -0.5,
+    letterSpacing: 0.2,
   },
   headlineLarge: {
     fontSize: 36,
     fontWeight: '200' as const,
     letterSpacing: -0.8,
   },
-  /** Section titles */
+  /** Section titles — leiser, uppercase feel */
   sectionTitle: {
     fontSize: 12,
     fontWeight: '600' as const,
@@ -106,5 +106,11 @@ export const EDITORIAL_TYPOGRAPHY = {
     fontSize: 13,
     fontWeight: '400' as const,
     lineHeight: 20,
+  },
+  /** Support text — noch ruhiger */
+  support: {
+    fontSize: 11,
+    fontWeight: '500' as const,
+    letterSpacing: 0.8,
   },
 } as const;

@@ -83,11 +83,50 @@ Der Home-Tab zeigt je nach Feature-Flag den Editorial- oder Original-Screen.
 
 ---
 
+## Phase 1B — Sichtbares Home-Redesign
+
+Phase 1B ersetzt die bisherigen Home-Komponenten durch **Editorial-spezifische Varianten**. Der Home Screen wirkt nun deutlich anders: wärmer, ruhiger, editorial, luftiger.
+
+### Neue Editorial-Komponenten (`components/home/editorial/`)
+
+| Komponente | Ersetzt | Änderungen |
+|------------|---------|------------|
+| **EditorialHeroCountdown** | HeroCountdownCard | LinearGradient-Hintergrund (#F5F0E8 → #E8E0D4), größerer Countdown (56px), weichere Typografie, dezente Badges |
+| **EditorialTimeRemaining** | TimeRemainingCard | Weniger Linien, mehr Abstand, leichtere Schrift |
+| **EditorialJourneyProgress** | JourneyProgress | Weicherer Fortschrittsbalken, ruhigere Card |
+| **EditorialPregnancyDetails** | PregnancyDetailsCard | ValueCards mit surfaceMuted, weniger harte Rahmen |
+| **EditorialGenderSelector** | GenderSelector | Sand/Taupe statt Blau/Pink, einheitliche Buttons |
+| **EditorialCustomizeCTA** | CustomizeCTA | Ruhigerer CTA, weniger auffällig |
+
+### Geänderte Dateien (Phase 1B)
+
+**Neu:**
+- `components/home/editorial/EditorialHeroCountdown.tsx`
+- `components/home/editorial/EditorialTimeRemaining.tsx`
+- `components/home/editorial/EditorialJourneyProgress.tsx`
+- `components/home/editorial/EditorialPregnancyDetails.tsx`
+- `components/home/editorial/EditorialGenderSelector.tsx`
+- `components/home/editorial/EditorialCustomizeCTA.tsx`
+- `components/home/editorial/index.ts`
+
+**Geändert:**
+- `components/home/HomeScreenEditorial.tsx` — nutzt ausschließlich die neuen Editorial-Komponenten
+
+### Sichtbare Unterschiede
+
+- **Hero:** Großer, dominanter Countdown mit sepia/beige Gradient statt flacher Karte
+- **Cards:** Weichere Ecken, weniger Linien, mehr Whitespace
+- **Farben:** Sand/Taupe/muted bronze statt orange-braun
+- **Typografie:** Editorial-Hierarchie, weniger utilitär
+- **Struktur:** Weniger visuelle Unruhe, ruhigere Sektionen
+
+---
+
 ## Offene Punkte / Nicht angefasst
 
 - **Design, Journey, Profile Tabs:** Unverändert
 - **Tab Bar:** Verwendet weiterhin `constants/colors.ts`
-- **HeroCountdownCard, TimeRemainingCard, etc.:** Unverändert, nutzen DesignContext-Farben
+- **Original-Komponenten:** HeroCountdownCard, TimeRemainingCard etc. bleiben für den Original-Home erhalten
 - **Premium:** Keine Änderungen
 - **Medizinische Anmutung:** Keine
 - **Neue Features:** Keine
@@ -96,4 +135,4 @@ Der Home-Tab zeigt je nach Feature-Flag den Editorial- oder Original-Screen.
 
 ## Risiken
 
-- Die Child-Komponenten (HeroCountdownCard, JourneyProgress, …) nutzen weiterhin die DesignContext-Farben. Bei Theme „basic“ sind diese bereits warm; bei anderen Themes kann der Kontrast zum Editorial-Hintergrund variieren.
+- Keine: Editorial Home nutzt eigene Komponenten; Original Home bleibt unverändert.
