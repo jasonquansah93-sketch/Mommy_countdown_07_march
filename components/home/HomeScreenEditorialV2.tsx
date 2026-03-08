@@ -22,24 +22,25 @@ import {
 } from '../../utils/date';
 import { loadJSON, saveJSON } from '../../utils/storage';
 
-const BG = '#F8F4EE';
-const SURFACE = '#F3EEE6';
-const SURFACE_CARD = '#EFE8DE';
-const SURFACE_CARD_DARKER = '#ECE4D8';
-const WHITE_GLASS = 'rgba(255,255,255,0.62)';
-const WHITE_SOFT = 'rgba(255,255,255,0.82)';
-const TEXT = '#2B2420';
-const TEXT_SOFT = '#998C80';
-const TEXT_FAINT = '#B5A79A';
-const ACCENT = '#C6AB8E';
-const ACCENT_DARK = '#B29372';
-const SHADOW = 'rgba(117, 93, 69, 0.10)';
+// Mock-up: sepia / cream / soft beige, Apple-premium, editorial
+const BG = '#F7F3ED';
+const SURFACE = '#F2EDE5';
+const SURFACE_CARD = '#EFE9E0';
+const SURFACE_CARD_DARKER = '#EBE5DB';
+const WHITE_GLASS = 'rgba(255,255,255,0.58)';
+const WHITE_SOFT = 'rgba(255,255,255,0.88)';
+const TEXT = '#2A231E';
+const TEXT_SOFT = '#8E8175';
+const TEXT_FAINT = '#A99D92';
+const ACCENT = '#B89A7A';
+const ACCENT_DARK = '#A68B6B';
+const SHADOW = 'rgba(110, 88, 66, 0.08)';
 
-const H_PADDING = 20;
-const HERO_RADIUS = 34;
-const CARD_RADIUS = 30;
+const H_PADDING = 22;
+const HERO_RADIUS = 32;
+const CARD_RADIUS = 28;
 const PILL_RADIUS = 999;
-const BUTTON_RADIUS = 31;
+const BUTTON_RADIUS = 26;
 
 type TimeMode = 'days' | 'weeks' | 'hours';
 const MODES: TimeMode[] = ['days', 'weeks', 'hours'];
@@ -58,13 +59,11 @@ function Header() {
         <View style={styles.headerCircle}>
           <Ionicons name="heart" size={16} color={ACCENT_DARK} />
         </View>
-
         <Text style={styles.brand}>
           <Text style={styles.brandBold}>Mommy</Text>
           <Text style={styles.brandLight}>Count</Text>
         </Text>
       </View>
-
       <TouchableOpacity
         style={styles.headerCircle}
         onPress={() => router.push('/(tabs)/profile')}
@@ -93,7 +92,6 @@ function HeroBlock({
   seconds,
   countdownStarted,
   genderLabel,
-  isPremium,
   onEdit,
   onShare,
   onScrollToDetails,
@@ -105,40 +103,33 @@ function HeroBlock({
   seconds: number;
   countdownStarted: boolean;
   genderLabel: string;
-  isPremium: boolean;
   onEdit: () => void;
   onShare: () => void;
   onScrollToDetails: () => void;
 }) {
-  const heroHeight = 455;
+  const heroHeight = 420;
 
   return (
     <View style={styles.heroOuter}>
-      <View style={[styles.heroShadow, { height: heroHeight + 18 }]} />
-
+      <View style={[styles.heroShadow, { height: heroHeight + 14 }]} />
       <View style={[styles.heroCard, { minHeight: heroHeight }]}>
         <LinearGradient
-          colors={['#F6F1EA', '#EEE5DA', '#E7DDCF']}
-          start={{ x: 0.05, y: 0.05 }}
+          colors={['#F5F0E8', '#EDE6DC', '#E5DCD0', '#DFD5C8']}
+          start={{ x: 0.03, y: 0.03 }}
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFillObject}
         />
-
-        <View style={styles.heroShapeOne} />
-        <View style={styles.heroShapeTwo} />
-        <View style={styles.heroShapeThree} />
-        <View style={styles.heroShapeFour} />
+        <View style={styles.heroTexture1} />
+        <View style={styles.heroTexture2} />
+        <View style={styles.heroTexture3} />
         <View style={styles.heroMist} />
         <View style={styles.heroBand} />
 
         <View style={styles.heroTopRow}>
           <View style={styles.heroBadge}>
+            <Ionicons name="heart" size={12} color={TEXT} style={{ marginRight: 8 }} />
             <Text style={styles.heroBadgeText}>{genderLabel}</Text>
-            {isPremium ? (
-              <Ionicons name="star" size={11} color={ACCENT_DARK} style={{ marginLeft: 6 }} />
-            ) : null}
           </View>
-
           <TouchableOpacity style={styles.heroEdit} onPress={onEdit} activeOpacity={0.82}>
             <Ionicons name="pencil" size={18} color={TEXT_SOFT} />
           </TouchableOpacity>
@@ -150,7 +141,6 @@ function HeroBlock({
             <Text style={styles.heroEmptyText}>
               Set your dates and begin your countdown.
             </Text>
-
             <TouchableOpacity style={styles.heroCta} onPress={onScrollToDetails} activeOpacity={0.9}>
               <Text style={styles.heroCtaText}>Start your countdown</Text>
             </TouchableOpacity>
@@ -158,7 +148,6 @@ function HeroBlock({
         ) : (
           <>
             <Text style={styles.heroHeadline}>Meeting you in...</Text>
-
             <View style={styles.heroCountdownRow}>
               <HeroUnit value={pad(weeks)} label="WEEKS" />
               <View style={styles.heroDivider} />
@@ -166,20 +155,31 @@ function HeroBlock({
               <View style={styles.heroDivider} />
               <HeroUnit value={pad(hours)} label="HOURS" />
             </View>
-
             <View style={styles.heroTimerPill}>
               <Text style={styles.heroTimerText}>
                 {pad(minutes)}:{pad(seconds)}
               </Text>
+              <View style={styles.heroTimerLabels}>
+                <Text style={styles.heroTimerLabel}>MIN</Text>
+                <Text style={styles.heroTimerLabel}>SEC</Text>
+              </View>
             </View>
-
             <TouchableOpacity style={styles.heroCta} onPress={onShare} activeOpacity={0.9}>
-              <Ionicons name="share-outline" size={18} color="#fff" />
+              <Ionicons name="share-outline" size={16} color="#fff" />
               <Text style={styles.heroCtaText}>Share our countdown</Text>
             </TouchableOpacity>
           </>
         )}
       </View>
+    </View>
+  );
+}
+
+function ValueText() {
+  return (
+    <View style={styles.valueTextWrap}>
+      <Text style={styles.valueTextLine}>Keep memories as beautiful as your journey.</Text>
+      <Text style={styles.valueTextSub}>Upgrade for more.</Text>
     </View>
   );
 }
@@ -202,7 +202,6 @@ function TimeRemaining({
   }, []);
 
   const nextMode = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
-
   const cycle = useCallback(() => {
     const next = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
     saveJSON('v2_time_mode', next);
@@ -215,7 +214,6 @@ function TimeRemaining({
       : mode === 'weeks'
       ? weekDay.weeks
       : timeData.days * 24 + timeData.hours;
-
   const unit = mode === 'days' ? 'days' : mode === 'weeks' ? 'weeks' : 'hours';
 
   return (
@@ -226,7 +224,6 @@ function TimeRemaining({
     >
       <Text style={styles.sectionEyebrow}>Time remaining</Text>
       {countdownStarted ? <Text style={styles.sectionHint}>Tap for {nextMode}</Text> : null}
-
       <View style={styles.timeRow}>
         <Text style={styles.timeNumber}>{countdownStarted ? value : '—'}</Text>
         {countdownStarted ? <Text style={styles.timeUnit}>{unit}</Text> : null}
@@ -251,14 +248,12 @@ function JourneyProgressCard({
           <Text style={styles.cardEyebrow}>Journey progress</Text>
           <Text style={styles.progressPercent}>{percent}%</Text>
         </View>
-
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${percent}%` }]} />
-        </View>
-
         <View style={styles.progressDates}>
           <Text style={styles.progressDateText}>Start {startLabel}</Text>
           <Text style={styles.progressDateText}>Due {dueLabel}</Text>
+        </View>
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${percent}%` }]} />
         </View>
       </View>
     </View>
@@ -281,7 +276,6 @@ function PregnancyCard({
   return (
     <View style={styles.sectionWrap}>
       <Text style={styles.sectionEyebrow}>Your pregnancy</Text>
-
       <View style={styles.softCardDarker}>
         <View style={styles.formRow}>
           <Text style={styles.fieldLabel}>Start date</Text>
@@ -291,10 +285,9 @@ function PregnancyCard({
             activeOpacity={0.82}
           >
             <Text style={styles.fieldValueText}>{formatDateShort(startDate)}</Text>
-            <Ionicons name="calendar-outline" size={22} color={ACCENT_DARK} />
+            <Ionicons name="calendar-outline" size={20} color={ACCENT_DARK} />
           </TouchableOpacity>
         </View>
-
         <View style={styles.formRow}>
           <Text style={styles.fieldLabel}>Due date</Text>
           <TouchableOpacity
@@ -303,10 +296,9 @@ function PregnancyCard({
             activeOpacity={0.82}
           >
             <Text style={styles.fieldValueText}>{formatDateShort(dueDate)}</Text>
-            <Ionicons name="calendar" size={22} color={ACCENT_DARK} />
+            <Ionicons name="calendar" size={20} color={ACCENT_DARK} />
           </TouchableOpacity>
         </View>
-
         {!countdownStarted ? (
           <TouchableOpacity style={styles.secondaryCta} onPress={onStartCountdown} activeOpacity={0.9}>
             <Text style={styles.secondaryCtaText}>Start countdown</Text>
@@ -333,11 +325,9 @@ function GenderSelector({
   return (
     <View style={styles.sectionWrap}>
       <Text style={styles.sectionEyebrow}>It's a...</Text>
-
       <View style={styles.genderRow}>
         {GENDERS.map((item) => {
           const active = item.key === selected;
-
           return (
             <TouchableOpacity
               key={item.key}
@@ -347,9 +337,9 @@ function GenderSelector({
             >
               <Ionicons
                 name={item.icon}
-                size={34}
+                size={32}
                 color={active ? ACCENT_DARK : '#A89C90'}
-                style={{ marginBottom: 12 }}
+                style={{ marginBottom: 10 }}
               />
               <Text style={[styles.genderText, active && styles.genderTextActive]}>
                 {item.label}
@@ -372,13 +362,12 @@ function CustomizeCard() {
         <Text style={styles.customizeBody}>
           Personalize your countdown with fonts, colors, and photos
         </Text>
-
         <TouchableOpacity
           style={styles.heroCta}
           onPress={() => router.push('/(tabs)/design')}
           activeOpacity={0.9}
         >
-          <Ionicons name="pencil-outline" size={18} color="#fff" />
+          <Ionicons name="pencil-outline" size={17} color="#fff" />
           <Text style={styles.heroCtaText}>Customize design</Text>
         </TouchableOpacity>
       </View>
@@ -393,13 +382,11 @@ export default function HomeScreenEditorialV2() {
 
   const dueDate =
     profile?.dueDate ?? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
-
   const startDate =
     profile?.startDate ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
   const countdownStarted = profile?.countdownStarted === true;
   const gender = (profile?.gender as 'boy' | 'girl' | 'surprise') ?? 'boy';
-  const isPremium = false;
 
   const weekDay = useMemo(() => getWeeksAndDays(dueDate), [dueDate]);
   const [time, setTime] = useState(() => getTimeUntilDueMs(dueDate));
@@ -418,7 +405,7 @@ export default function HomeScreenEditorialV2() {
   }, [weekDay]);
 
   const scrollToDetails = useCallback(() => {
-    scrollRef.current?.scrollTo({ y: 690, animated: true });
+    scrollRef.current?.scrollTo({ y: 720, animated: true });
   }, []);
 
   const handleStartCountdown = useCallback(() => {
@@ -431,7 +418,6 @@ export default function HomeScreenEditorialV2() {
   return (
     <View style={styles.screen}>
       <Header />
-
       <ScrollView
         ref={scrollRef}
         style={styles.scroll}
@@ -446,11 +432,12 @@ export default function HomeScreenEditorialV2() {
           seconds={time.seconds}
           countdownStarted={countdownStarted}
           genderLabel={genderLabel}
-          isPremium={isPremium}
           onEdit={() => router.push('/(tabs)/design')}
           onShare={handleShare}
           onScrollToDetails={scrollToDetails}
         />
+
+        <ValueText />
 
         <TimeRemaining
           countdownStarted={countdownStarted}
@@ -487,395 +474,374 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: BG,
   },
-
   scroll: {
     flex: 1,
     backgroundColor: BG,
   },
-
   content: {
-    paddingBottom: 16,
+    paddingBottom: 24,
   },
-
   header: {
     paddingHorizontal: H_PADDING,
-    paddingBottom: 10,
+    paddingBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-
   headerCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: SURFACE,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   brand: {
     marginLeft: 12,
-    fontSize: 22,
-    letterSpacing: -0.35,
+    fontSize: 21,
+    letterSpacing: -0.3,
   },
-
   brandBold: {
     color: TEXT,
     fontWeight: '700',
   },
-
   brandLight: {
     color: TEXT_SOFT,
     fontWeight: '300',
   },
-
   heroOuter: {
     marginHorizontal: H_PADDING,
-    marginTop: 10,
-    marginBottom: 22,
+    marginTop: 12,
+    marginBottom: 28,
   },
-
   heroShadow: {
     position: 'absolute',
-    top: 18,
-    left: 10,
-    right: 10,
+    top: 14,
+    left: 12,
+    right: 12,
     borderRadius: HERO_RADIUS + 2,
     backgroundColor: SHADOW,
-    shadowColor: '#8F775D',
-    shadowOffset: { width: 0, height: 24 },
-    shadowOpacity: 0.06,
-    shadowRadius: 28,
-    elevation: 7,
+    shadowColor: '#8A7358',
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.05,
+    shadowRadius: 24,
+    elevation: 6,
   },
-
   heroCard: {
     overflow: 'hidden',
     borderRadius: HERO_RADIUS,
     backgroundColor: SURFACE,
-    paddingTop: 22,
-    paddingBottom: 24,
-    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 20,
+    paddingHorizontal: 22,
   },
-
-  heroShapeOne: {
+  heroTexture1: {
     position: 'absolute',
-    top: -12,
-    left: -62,
-    width: 300,
-    height: 220,
+    top: -16,
+    left: -50,
+    width: 280,
+    height: 200,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.20)',
+    backgroundColor: 'rgba(255,255,255,0.18)',
   },
-
-  heroShapeTwo: {
+  heroTexture2: {
     position: 'absolute',
-    right: -30,
-    top: 92,
-    width: 240,
-    height: 170,
-    borderRadius: 999,
-    backgroundColor: 'rgba(233,223,210,0.42)',
-  },
-
-  heroShapeThree: {
-    position: 'absolute',
-    left: 174,
-    bottom: 54,
-    width: 190,
+    right: -24,
+    top: 80,
+    width: 200,
     height: 150,
     borderRadius: 999,
-    backgroundColor: 'rgba(214,198,179,0.16)',
+    backgroundColor: 'rgba(228,218,205,0.38)',
   },
-
-  heroShapeFour: {
+  heroTexture3: {
     position: 'absolute',
-    left: -22,
-    top: 182,
-    width: 380,
-    height: 26,
-    backgroundColor: 'rgba(255,255,255,0.10)',
+    left: 120,
+    bottom: 48,
+    width: 160,
+    height: 120,
+    borderRadius: 999,
+    backgroundColor: 'rgba(210,195,178,0.14)',
   },
-
   heroMist: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.035)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
   },
-
   heroBand: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    height: 122,
-    backgroundColor: 'rgba(194,171,142,0.055)',
+    height: 100,
+    backgroundColor: 'rgba(180,155,130,0.045)',
   },
-
   heroTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-
   heroBadge: {
-    height: 40,
-    paddingHorizontal: 16,
+    height: 38,
+    paddingHorizontal: 14,
     borderRadius: PILL_RADIUS,
     backgroundColor: WHITE_GLASS,
-    alignItems: 'center',
-    justifyContent: 'center',
     flexDirection: 'row',
+    alignItems: 'center',
   },
-
   heroBadgeText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
-    letterSpacing: 0.8,
+    letterSpacing: 0.9,
     color: TEXT,
   },
-
   heroEdit: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.45)',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255,255,255,0.42)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   heroHeadline: {
-    marginTop: 22,
-    marginBottom: 20,
+    marginTop: 20,
+    marginBottom: 18,
     textAlign: 'center',
-    fontSize: 34,
-    lineHeight: 40,
+    fontSize: 30,
+    lineHeight: 36,
     fontWeight: '300',
-    letterSpacing: -1,
+    letterSpacing: -0.6,
     color: TEXT_SOFT,
   },
-
   heroCountdownRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 22,
+    marginBottom: 16,
   },
-
   heroUnit: {
-    minWidth: 92,
+    minWidth: 88,
     alignItems: 'center',
   },
-
   heroValue: {
-    fontSize: 82,
-    lineHeight: 86,
+    fontSize: 76,
+    lineHeight: 80,
     fontWeight: '300',
-    letterSpacing: -3.2,
+    letterSpacing: -2.8,
     color: TEXT,
     fontVariant: ['tabular-nums'],
   },
-
   heroLabel: {
-    marginTop: 8,
-    fontSize: 11,
-    lineHeight: 14,
+    marginTop: 6,
+    fontSize: 10,
+    lineHeight: 13,
     fontWeight: '600',
-    letterSpacing: 2.1,
+    letterSpacing: 2,
     color: TEXT_SOFT,
   },
-
   heroDivider: {
     width: 1,
-    height: 60,
-    marginHorizontal: 14,
-    backgroundColor: 'rgba(104,82,61,0.08)',
+    height: 56,
+    marginHorizontal: 12,
+    backgroundColor: 'rgba(100,80,60,0.07)',
   },
-
   heroTimerPill: {
     alignSelf: 'center',
-    width: 168,
-    height: 66,
-    borderRadius: 24,
-    backgroundColor: 'rgba(60,45,32,0.055)',
+    width: 140,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    marginBottom: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 22,
+    backgroundColor: 'rgba(55,42,30,0.05)',
   },
-
   heroTimerText: {
-    fontSize: 32,
-    lineHeight: 36,
+    fontSize: 28,
+    lineHeight: 32,
     fontWeight: '300',
     letterSpacing: 0.2,
     color: TEXT,
     fontVariant: ['tabular-nums'],
   },
-
+  heroTimerLabels: {
+    flexDirection: 'row',
+    marginTop: 4,
+    gap: 24,
+  },
+  heroTimerLabel: {
+    fontSize: 9,
+    fontWeight: '600',
+    letterSpacing: 1,
+    color: TEXT_FAINT,
+  },
   heroCta: {
-    height: 62,
+    height: 52,
     borderRadius: BUTTON_RADIUS,
     backgroundColor: ACCENT,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   heroCtaText: {
-    marginLeft: 10,
+    marginLeft: 8,
     color: '#fff',
-    fontSize: 16,
-    lineHeight: 19,
+    fontSize: 15,
+    lineHeight: 18,
     fontWeight: '600',
-    letterSpacing: 0.1,
+    letterSpacing: 0.05,
   },
-
   heroEmpty: {
-    paddingVertical: 34,
+    paddingVertical: 32,
     alignItems: 'center',
   },
-
   heroEmptyText: {
     fontSize: 15,
     lineHeight: 22,
     color: TEXT_SOFT,
     textAlign: 'center',
-    marginBottom: 22,
+    marginBottom: 20,
   },
-
+  valueTextWrap: {
+    marginHorizontal: H_PADDING,
+    marginBottom: 32,
+    alignItems: 'center',
+  },
+  valueTextLine: {
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: '400',
+    color: TEXT_SOFT,
+    textAlign: 'center',
+  },
+  valueTextSub: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '500',
+    color: TEXT_FAINT,
+    marginTop: 4,
+  },
   sectionWrap: {
     marginHorizontal: H_PADDING,
-    marginBottom: 26,
+    marginBottom: 32,
   },
-
   sectionWrapLast: {
     marginHorizontal: H_PADDING,
-    marginBottom: 110,
+    marginBottom: 120,
   },
-
   sectionEyebrow: {
     fontSize: 12,
     lineHeight: 16,
     fontWeight: '600',
-    letterSpacing: 0.95,
+    letterSpacing: 0.9,
     color: TEXT_SOFT,
-    marginBottom: 6,
+    marginBottom: 10,
   },
-
   sectionHint: {
     fontSize: 11,
     lineHeight: 15,
     color: TEXT_FAINT,
-    marginBottom: 12,
+    marginBottom: 14,
   },
-
   timeBlock: {
     marginHorizontal: H_PADDING,
-    marginBottom: 26,
+    marginBottom: 32,
   },
-
   timeRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
-
   timeNumber: {
-    fontSize: 64,
-    lineHeight: 68,
+    fontSize: 58,
+    lineHeight: 62,
     fontWeight: '300',
-    letterSpacing: -2.4,
+    letterSpacing: -2.2,
     color: TEXT,
     fontVariant: ['tabular-nums'],
     marginRight: 8,
   },
-
   timeUnit: {
-    fontSize: 22,
-    lineHeight: 26,
+    fontSize: 20,
+    lineHeight: 24,
     fontWeight: '300',
     color: TEXT_SOFT,
   },
-
   softCard: {
     backgroundColor: SURFACE_CARD,
     borderRadius: CARD_RADIUS,
-    padding: 22,
+    padding: 24,
+    shadowColor: '#8A7358',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 2,
   },
-
   softCardDarker: {
     backgroundColor: SURFACE_CARD_DARKER,
     borderRadius: CARD_RADIUS,
-    padding: 20,
+    padding: 24,
+    shadowColor: '#8A7358',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 2,
   },
-
   cardEyebrow: {
     fontSize: 12,
     lineHeight: 16,
     fontWeight: '600',
-    letterSpacing: 0.95,
+    letterSpacing: 0.9,
     color: TEXT_SOFT,
   },
-
   progressHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 18,
   },
-
   progressPercent: {
-    fontSize: 18,
-    lineHeight: 22,
+    fontSize: 17,
+    lineHeight: 21,
     fontWeight: '300',
     color: ACCENT_DARK,
   },
-
-  progressTrack: {
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: 'rgba(92,74,52,0.08)',
-    overflow: 'hidden',
-    marginBottom: 16,
-  },
-
-  progressFill: {
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: ACCENT,
-  },
-
   progressDates: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: 14,
   },
-
   progressDateText: {
     fontSize: 14,
     lineHeight: 18,
     fontWeight: '500',
     color: TEXT_SOFT,
   },
-
-  formRow: {
-    marginBottom: 16,
+  progressTrack: {
+    height: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(88,70,52,0.07)',
+    overflow: 'hidden',
   },
-
+  progressFill: {
+    height: 6,
+    borderRadius: 999,
+    backgroundColor: ACCENT,
+  },
+  formRow: {
+    marginBottom: 18,
+  },
   fieldLabel: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 11,
+    lineHeight: 15,
     fontWeight: '600',
     letterSpacing: 0.7,
     color: TEXT_SOFT,
     marginBottom: 8,
   },
-
   fieldValue: {
-    minHeight: 74,
+    minHeight: 68,
     borderRadius: 22,
     backgroundColor: WHITE_SOFT,
     paddingHorizontal: 18,
@@ -883,75 +849,66 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-
   fieldValueText: {
-    fontSize: 20,
-    lineHeight: 24,
+    fontSize: 19,
+    lineHeight: 23,
     fontWeight: '500',
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
     color: TEXT,
   },
-
   secondaryCta: {
-    marginTop: 4,
-    height: 56,
-    borderRadius: 28,
+    marginTop: 6,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: ACCENT,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   secondaryCtaText: {
     color: '#fff',
-    fontSize: 15,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 17,
     fontWeight: '600',
   },
-
   genderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: 14,
   },
-
   genderCard: {
-    width: '31.5%',
-    height: 120,
-    borderRadius: 24,
+    flex: 1,
+    height: 112,
+    borderRadius: 22,
     backgroundColor: SURFACE,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   genderCardActive: {
-    backgroundColor: 'rgba(255,255,255,0.74)',
-    borderWidth: 1.2,
-    borderColor: 'rgba(184,160,136,0.34)',
+    backgroundColor: 'rgba(255,255,255,0.78)',
+    borderWidth: 1,
+    borderColor: 'rgba(168,138,108,0.28)',
   },
-
   genderText: {
-    fontSize: 14,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 17,
     fontWeight: '500',
-    color: '#AA9D91',
+    color: '#A89C90',
   },
-
   genderTextActive: {
     color: ACCENT_DARK,
   },
-
   customizeTitle: {
-    fontSize: 28,
-    lineHeight: 34,
+    fontSize: 26,
+    lineHeight: 32,
     fontWeight: '400',
-    letterSpacing: -0.9,
+    letterSpacing: -0.8,
     color: TEXT,
-    marginBottom: 12,
+    marginBottom: 10,
   },
-
   customizeBody: {
-    fontSize: 16,
-    lineHeight: 25,
+    fontSize: 15,
+    lineHeight: 23,
     color: TEXT_SOFT,
-    marginBottom: 22,
+    marginBottom: 20,
   },
 });
