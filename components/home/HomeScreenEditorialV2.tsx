@@ -12,76 +12,53 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-
 import { useProfile } from '../../context/ProfileContext';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SW } = Dimensions.get('window');
+const H_PAD = 20;
+const CARD_W = SW - H_PAD * 2;
 
-const BG = '#F6F2EC';
-const PAPER = '#F8F4EE';
-const PAPER_SOFT = '#F4EEE6';
-const CARD = '#F1E9DF';
-const CARD_DARK = '#E8DDD0';
-const WHITE_GLASS = 'rgba(255,255,255,0.74)';
-const TEXT = '#2E2723';
-const TEXT_SOFT = '#8F8376';
-const TEXT_MUTED = '#A59788';
-const ACCENT = '#C7AA87';
-const ACCENT_DARK = '#B6946F';
-const BORDER = 'rgba(126, 105, 82, 0.08)';
-const SHADOW = 'rgba(98, 76, 53, 0.12)';
+const TEXT_DARK  = '#2E2418';
+const TEXT_MED   = '#6B5C4D';
+const TEXT_SOFT  = '#9E9082';
+const ACCENT     = '#B89060';
+const ACCENT_BTN = '#C0996A';
 
 type GenderValue = 'boy' | 'girl' | 'surprise';
 
-function pad(value: number) {
-  return String(Math.max(0, value)).padStart(2, '0');
+function pad(v: number) {
+  return String(Math.max(0, v)).padStart(2, '0');
 }
 
-function formatLongDate(dateLike: string | Date) {
-  const date = typeof dateLike === 'string' ? new Date(dateLike) : dateLike;
-  try {
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    }).format(date);
-  } catch {
-    return date.toDateString();
-  }
+function fmt(d: string | Date) {
+  const dt = typeof d === 'string' ? new Date(d) : d;
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(dt);
 }
 
-function getRemainingParts(dueDateLike: string | Date) {
-  const dueDate = typeof dueDateLike === 'string' ? new Date(dueDateLike) : dueDateLike;
-  const diff = Math.max(0, dueDate.getTime() - Date.now());
-
-  const totalDays = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const weeks = Math.floor(totalDays / 7);
-  const days = totalDays % 7;
-  const hours = Math.floor(diff / (1000 * 60 * 60)) % 24;
-  const minutes = Math.floor(diff / (1000 * 60)) % 60;
-  const seconds = Math.floor(diff / 1000) % 60;
-
+function getLeft(due: string | Date) {
+  const d   = typeof due === 'string' ? new Date(due) : due;
+  const ms  = Math.max(0, d.getTime() - Date.now());
+  const tot = Math.floor(ms / 86400000);
   return {
-    diff,
-    totalDays,
-    weeks,
-    days,
-    hours,
-    minutes,
-    seconds,
+    weeks:   Math.floor(tot / 7),
+    days:    tot % 7,
+    hours:   Math.floor((ms % 86400000) / 3600000),
+    minutes: Math.floor((ms % 3600000)  / 60000),
+    seconds: Math.floor((ms % 60000)    / 1000),
   };
 }
 
-function getProgress(startDateLike: string | Date, dueDateLike: string | Date) {
-  const start = typeof startDateLike === 'string' ? new Date(startDateLike) : startDateLike;
-  const due = typeof dueDateLike === 'string' ? new Date(dueDateLike) : dueDateLike;
-
-  const total = due.getTime() - start.getTime();
-  const elapsed = Date.now() - start.getTime();
-
+function getPct(start: string | Date, due: string | Date) {
+  const s = typeof start === 'string' ? new Date(start) : start;
+  const d = typeof due   === 'string' ? new Date(due)   : due;
+  const total   = d.getTime() - s.getTime();
+  const elapsed = Date.now() - s.getTime();
   if (total <= 0) return 0;
-  const raw = (elapsed / total) * 100;
-  return Math.min(100, Math.max(0, Math.round(raw)));
+  return Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
 }
 
 export default function HomeScreenEditorialV2() {
@@ -91,812 +68,608 @@ export default function HomeScreenEditorialV2() {
 
   const dueDate = useMemo(() => {
     if (profile?.dueDate) return profile.dueDate;
-    const fallback = new Date();
-    fallback.setDate(fallback.getDate() + 20);
-    return fallback.toISOString();
+    const d = new Date(); d.setDate(d.getDate() + 23); return d.toISOString();
   }, [profile?.dueDate]);
 
   const startDate = useMemo(() => {
     if (profile?.startDate) return profile.startDate;
-    const fallback = new Date();
-    fallback.setDate(fallback.getDate() - 260);
-    return fallback.toISOString();
+    const d = new Date(); d.setDate(d.getDate() - 260); return d.toISOString();
   }, [profile?.startDate]);
 
-  const gender = (profile?.gender as GenderValue) || 'boy';
-
-  const [time, setTime] = useState(() => getRemainingParts(dueDate));
+  const gender: GenderValue = (profile?.gender as GenderValue) || 'boy';
+  const [time, setTime] = useState(() => getLeft(dueDate));
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTime(getRemainingParts(dueDate));
-    }, 1000);
-
-    return () => clearInterval(timer);
+    const id = setInterval(() => setTime(getLeft(dueDate)), 1000);
+    return () => clearInterval(id);
   }, [dueDate]);
 
-  const progress = useMemo(() => getProgress(startDate, dueDate), [startDate, dueDate]);
+  const pct = useMemo(() => getPct(startDate, dueDate), [startDate, dueDate]);
 
-  const genderLabel =
-    gender === 'boy' ? "IT'S A BOY" : gender === 'girl' ? "IT'S A GIRL" : "IT'S A SURPRISE";
+  const gBadge =
+    gender === 'boy'  ? "IT'S A BOY" :
+    gender === 'girl' ? "IT'S A GIRL" : "IT'S A SURPRISE";
 
-  const handleShare = useCallback(() => {
+  const onShare = useCallback(() => {
     Share.share({
       message: `Meeting you in ${time.weeks} weeks, ${time.days} days and ${time.hours} hours.`,
     });
-  }, [time.weeks, time.days, time.hours]);
-
-  const setGender = useCallback(
-    (value: GenderValue) => {
-      updateProfile?.({ gender: value });
-    },
-    [updateProfile]
-  );
+  }, [time]);
 
   return (
-    <View style={styles.screen}>
+    <View style={s.screen}>
       <LinearGradient
-        colors={['#FBF8F3', '#F5F0E9', '#F4EFE8']}
+        colors={['#F3EDE3', '#EDE7DC', '#E8E2D6']}
         style={StyleSheet.absoluteFillObject}
       />
 
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <View style={styles.brandWrap}>
-          <View style={styles.brandIcon}>
-            <Ionicons name="heart" size={18} color={ACCENT_DARK} />
+      {/* ── Header ── */}
+      <View style={[s.header, { paddingTop: insets.top + 10 }]}>
+        <View style={s.headerLeft}>
+          <View style={s.hHeart}>
+            <Ionicons name="heart" size={16} color={ACCENT} />
           </View>
-          <Text style={styles.brandText}>
-            <Text style={styles.brandTextBold}>Mommy</Text>
-            <Text style={styles.brandTextLight}>Count</Text>
+          <Text style={s.brand}>
+            <Text style={s.brandB}>Mommy</Text>
+            <Text style={s.brandL}>Count</Text>
           </Text>
         </View>
-
         <TouchableOpacity
-          activeOpacity={0.82}
-          style={styles.headerAction}
+          style={s.hGear}
           onPress={() => router.push('/(tabs)/profile')}
+          activeOpacity={0.8}
         >
-          <Ionicons name="settings-outline" size={22} color={TEXT_MUTED} />
+          <Ionicons name="settings-outline" size={20} color={TEXT_SOFT} />
         </TouchableOpacity>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.content,
-          { paddingBottom: Math.max(120, insets.bottom + 88) },
-        ]}
+        contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + 104 }]}
       >
-        <View style={styles.heroShadow} />
-
-        <View style={styles.hero}>
+        {/* ══════════════════════════════════════
+            HERO CARD
+        ══════════════════════════════════════ */}
+        <View style={s.heroCard}>
+          {/* Base gradient */}
           <LinearGradient
-            colors={['#EFE5D9', '#E8DBCC', '#E6D9CB']}
-            start={{ x: 0.05, y: 0.02 }}
-            end={{ x: 0.95, y: 1 }}
+            colors={['#E9DECE', '#E1D3C0', '#D9CAB5', '#D4C5AE']}
+            start={{ x: 0.1, y: 0 }}
+            end={{ x: 0.9, y: 1 }}
             style={StyleSheet.absoluteFillObject}
           />
 
-          <View style={styles.heroTextureA} />
-          <View style={styles.heroTextureB} />
-          <View style={styles.heroTextureC} />
-          <View style={styles.heroTextureD} />
-          <View style={styles.heroTextureE} />
-          <View style={styles.heroSoftWash} />
+          {/* Floral / botanical texture — layered organic shapes */}
+          <View style={s.f1} /><View style={s.f2} /><View style={s.f3} />
+          <View style={s.f4} /><View style={s.f5} /><View style={s.f6} />
+          <View style={s.f7} /><View style={s.f8} /><View style={s.f9} />
+          {/* Paper grain wash */}
+          <View style={s.paperWash} />
 
-          <View style={styles.heroTopRow}>
-            <View style={styles.heroBadge}>
-              <Ionicons name="heart" size={15} color={ACCENT_DARK} />
-              <Text style={styles.heroBadgeText}>{genderLabel}</Text>
+          {/* top row */}
+          <View style={s.heroTop}>
+            <View style={s.badge}>
+              <Ionicons name="heart" size={13} color={ACCENT} style={{ marginRight: 7 }} />
+              <Text style={s.badgeTxt}>{gBadge}</Text>
             </View>
-
             <TouchableOpacity
-              activeOpacity={0.86}
-              style={styles.heroEdit}
+              style={s.editBtn}
               onPress={() => router.push('/(tabs)/design')}
+              activeOpacity={0.8}
             >
-              <Ionicons name="pencil" size={18} color={TEXT_SOFT} />
+              <Ionicons name="pencil" size={16} color={TEXT_MED} />
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.heroTitle}>Meeting you in...</Text>
+          {/* Headline */}
+          <Text style={s.heroTitle}>Meeting you in...</Text>
 
-          <View style={styles.countdownRow}>
-            <View style={styles.countItem}>
-              <Text style={styles.countValue}>{pad(time.weeks)}</Text>
-              <Text style={styles.countLabel}>WEEKS</Text>
+          {/* Countdown */}
+          <View style={s.countRow}>
+            <View style={s.countCol}>
+              <Text style={s.countNum}>{pad(time.weeks)}</Text>
+              <Text style={s.countLbl}>WEEKS</Text>
             </View>
-
-            <View style={styles.countDivider} />
-
-            <View style={styles.countItem}>
-              <Text style={styles.countValue}>{pad(time.days)}</Text>
-              <Text style={styles.countLabel}>DAYS</Text>
+            <View style={s.countDivider} />
+            <View style={s.countCol}>
+              <Text style={s.countNum}>{pad(time.days)}</Text>
+              <Text style={s.countLbl}>DAYS</Text>
             </View>
-
-            <View style={styles.countDivider} />
-
-            <View style={styles.countItem}>
-              <Text style={styles.countValue}>{pad(time.hours)}</Text>
-              <Text style={styles.countLabel}>HOURS</Text>
+            <View style={s.countDivider} />
+            <View style={s.countCol}>
+              <Text style={s.countNum}>{pad(time.hours)}</Text>
+              <Text style={s.countLbl}>HOURS</Text>
             </View>
           </View>
 
-          <View style={styles.timerPill}>
+          {/* Timer pill */}
+          <View style={s.timerPill}>
             <LinearGradient
-              colors={['rgba(255,255,255,0.86)', 'rgba(249,245,239,0.68)']}
+              colors={['rgba(255,255,255,0.92)', 'rgba(250,245,237,0.82)']}
               style={StyleSheet.absoluteFillObject}
             />
-            <Text style={styles.timerValue}>
-              {pad(time.minutes)}:{pad(time.seconds)}
-            </Text>
-            <View style={styles.timerMeta}>
-              <Text style={styles.timerMetaText}>MIN</Text>
-              <Text style={styles.timerMetaText}>SEC</Text>
+            <Text style={s.timerVal}>{pad(time.minutes)}:{pad(time.seconds)}</Text>
+            <View style={s.timerMeta}>
+              <Text style={s.timerLbl}>MIN</Text>
+              <Text style={s.timerLbl}>SEC</Text>
             </View>
           </View>
 
-          <View style={styles.heroFooterBand}>
-            <TouchableOpacity activeOpacity={0.9} style={styles.shareBtn} onPress={handleShare}>
+          {/* Share button — inside hero footer band */}
+          <View style={s.heroFooter}>
+            <TouchableOpacity style={s.shareBtn} onPress={onShare} activeOpacity={0.88}>
               <LinearGradient
-                colors={[ACCENT, '#D1B18D', ACCENT]}
-                start={{ x: 0.05, y: 0 }}
-                end={{ x: 0.95, y: 1 }}
-                style={StyleSheet.absoluteFillObject}
-              />
-              <Ionicons name="share-outline" size={18} color="#FFFDFB" />
-              <Text style={styles.shareText}>Share our countdown</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.valueTextWrap}>
-          <Text style={styles.valueTextLineOne}>Keep memories as beautiful as your journey.</Text>
-          <Text style={styles.valueTextLineTwo}>Upgrade for more.</Text>
-        </View>
-
-        <View style={styles.sectionBlock}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Time remaining</Text>
-            <View style={styles.sectionHairline} />
-          </View>
-          <Text style={styles.sectionHint}>Tap for weeks</Text>
-
-          <View style={styles.progressCard}>
-            <LinearGradient
-              colors={['rgba(255,255,255,0.76)', 'rgba(247,242,234,0.58)']}
-              style={StyleSheet.absoluteFillObject}
-            />
-            <View style={styles.progressTextureOne} />
-            <View style={styles.progressTextureTwo} />
-
-            <View style={styles.progressTopRow}>
-              <Text style={styles.progressDateTop}>Start {formatLongDate(startDate)}</Text>
-              <Text style={styles.progressPercent}>{progress}%</Text>
-            </View>
-
-            <View style={styles.progressTrack}>
-              <LinearGradient
-                colors={[ACCENT_DARK, ACCENT, '#D9B896']}
+                colors={[ACCENT_BTN, '#B48C5E', ACCENT_BTN]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                style={[styles.progressFill, { width: `${progress}%` as any }]}
+                style={StyleSheet.absoluteFillObject}
               />
-            </View>
-
-            <Text style={styles.progressDateBottom}>Due {formatLongDate(dueDate)}</Text>
+              <Ionicons name="share-outline" size={18} color="#FFF8EF" style={{ marginRight: 10 }} />
+              <Text style={s.shareTxt}>Share our countdown</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        <View style={styles.sectionBlock}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Your pregnancy</Text>
-            <View style={styles.sectionHairline} />
+        {/* ══════════════════════════════════════
+            VALUE LINE
+        ══════════════════════════════════════ */}
+        <View style={s.valueLine}>
+          <Text style={s.valueT1}>Keep memories as beautiful as your journey.</Text>
+          <Text style={s.valueT2}>Upgrade for more.</Text>
+        </View>
+
+        {/* ══════════════════════════════════════
+            TIME REMAINING
+        ══════════════════════════════════════ */}
+        <View style={s.section}>
+          <View style={s.secHead}>
+            <Text style={s.secTitle}>Time remaining</Text>
+            <View style={s.secLine} />
+          </View>
+          <Text style={s.secSub}>Tap for weeks</Text>
+
+          <View style={s.progCard}>
+            <LinearGradient
+              colors={['rgba(255,255,255,0.80)', 'rgba(248,241,232,0.68)']}
+              style={StyleSheet.absoluteFillObject}
+            />
+            <View style={s.progTex} />
+            <View style={s.progTopRow}>
+              <Text style={s.progDate}>Start {fmt(startDate)}</Text>
+              <Text style={s.progPct}>{pct}%</Text>
+            </View>
+            <View style={s.progTrack}>
+              <LinearGradient
+                colors={['#B89060', '#C9A478', '#D4B488']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[s.progFill, { width: `${pct}%` as any }]}
+              />
+            </View>
+            <Text style={s.progDate}>Due {fmt(dueDate)}</Text>
+          </View>
+        </View>
+
+        {/* ══════════════════════════════════════
+            YOUR PREGNANCY  — 4 tiles as in mockup
+        ══════════════════════════════════════ */}
+        <View style={s.section}>
+          <View style={s.secHead}>
+            <Text style={s.secTitle}>Your pregnancy</Text>
+            <View style={s.secLine} />
           </View>
 
-          <View style={styles.genderRow}>
+          <View style={s.tileRow}>
             {[
-              { key: 'boy' as GenderValue, label: 'Boy', icon: 'male-outline' },
-              { key: 'girl' as GenderValue, label: 'Girl', icon: 'female-outline' },
-              { key: 'surprise' as GenderValue, label: 'Surprise', icon: 'gift-outline' },
-            ].map((item) => {
-              const selected = gender === item.key;
-
+              { key: 'boy'      as GenderValue, label: 'Boy',      icon: 'male-outline'   },
+              { key: 'girl'     as GenderValue, label: 'Girl',     icon: 'female-outline' },
+              { key: 'surprise' as GenderValue, label: 'Surprise', icon: 'gift-outline'   },
+              { key: null,                       label: 'Profile',  icon: 'person-outline' },
+            ].map((item, i) => {
+              const sel = item.key !== null && gender === item.key;
               return (
                 <TouchableOpacity
-                  key={item.key}
-                  activeOpacity={0.86}
-                  style={[styles.genderCard, selected && styles.genderCardSelected]}
-                  onPress={() => setGender(item.key)}
+                  key={i}
+                  style={[s.tile, sel && s.tileActive]}
+                  onPress={() => {
+                    if (item.key !== null) {
+                      updateProfile?.({ gender: item.key });
+                    } else {
+                      router.push('/(tabs)/profile');
+                    }
+                  }}
+                  activeOpacity={0.8}
                 >
                   <LinearGradient
                     colors={
-                      selected
-                        ? ['rgba(255,255,255,0.86)', 'rgba(250,247,243,0.76)']
-                        : ['rgba(255,255,255,0.36)', 'rgba(247,242,234,0.18)']
+                      sel
+                        ? ['rgba(255,255,255,0.96)', 'rgba(252,248,241,0.90)']
+                        : ['rgba(255,255,255,0.52)', 'rgba(250,244,236,0.38)']
                     }
                     style={StyleSheet.absoluteFillObject}
                   />
                   <Ionicons
                     name={item.icon as any}
-                    size={42}
-                    color={selected ? ACCENT_DARK : TEXT_MUTED}
+                    size={34}
+                    color={sel ? ACCENT : TEXT_SOFT}
                   />
-                  <Text style={[styles.genderLabel, selected && styles.genderLabelSelected]}>
-                    {item.label}
-                  </Text>
+                  <Text style={[s.tileLbl, sel && s.tileLblActive]}>{item.label}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
+        </View>
 
-          <View style={styles.customizeCard}>
+        {/* ══════════════════════════════════════
+            MAKE IT TRULY YOURS
+        ══════════════════════════════════════ */}
+        <View style={s.custCard}>
+          <LinearGradient
+            colors={['rgba(255,255,255,0.82)', 'rgba(248,241,231,0.74)']}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <View style={s.custTex} />
+
+          <Text style={s.custTitle}>Make it truly yours</Text>
+          <Text style={s.custBody}>
+            Personalize your countdown with fonts, colors, and photos
+          </Text>
+
+          <TouchableOpacity
+            style={s.custBtn}
+            onPress={() => router.push('/(tabs)/design')}
+            activeOpacity={0.88}
+          >
             <LinearGradient
-              colors={['rgba(255,255,255,0.76)', 'rgba(245,238,228,0.66)']}
+              colors={[ACCENT_BTN, '#B48C5E', ACCENT_BTN]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
               style={StyleSheet.absoluteFillObject}
             />
-            <View style={styles.customizeTextureA} />
-            <View style={styles.customizeTextureB} />
-
-            <Text style={styles.customizeTitle}>Make it truly yours</Text>
-            <Text style={styles.customizeBody}>
-              Personalize your countdown with fonts, colors, and photos
-            </Text>
-
-            <TouchableOpacity
-              activeOpacity={0.88}
-              style={styles.customizeButton}
-              onPress={() => router.push('/(tabs)/design')}
-            >
-              <LinearGradient
-                colors={[ACCENT_DARK, ACCENT, '#D2B08A']}
-                start={{ x: 0.05, y: 0 }}
-                end={{ x: 0.95, y: 1 }}
-                style={StyleSheet.absoluteFillObject}
-              />
-              <Ionicons name="pencil" size={18} color="#FFFDFB" />
-              <Text style={styles.customizeButtonText}>Customize design</Text>
-            </TouchableOpacity>
-          </View>
+            <Ionicons name="pencil" size={16} color="#FFF8EF" style={{ marginRight: 10 }} />
+            <Text style={s.custBtnTxt}>Customize design</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </View>
   );
 }
 
-const H_PAD = 24;
-const HERO_WIDTH = SCREEN_WIDTH - H_PAD * 2;
+/* ─────────────────────────────────────────────────────────────────────────── */
+const s = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: '#EDE8DE' },
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: BG,
-  },
-
+  /* header */
   header: {
     paddingHorizontal: H_PAD,
-    paddingBottom: 18,
+    paddingBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-
-  brandWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  headerLeft: { flexDirection: 'row', alignItems: 'center' },
+  hHeart: {
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: 'rgba(240,233,221,0.95)',
+    alignItems: 'center', justifyContent: 'center', marginRight: 10,
+  },
+  brand:  { fontSize: 22, letterSpacing: -0.4 },
+  brandB: { color: '#2E2418', fontWeight: '700' },
+  brandL: { color: '#9E9082', fontWeight: '300' },
+  hGear: {
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: 'rgba(240,233,221,0.95)',
+    alignItems: 'center', justifyContent: 'center',
   },
 
-  brandIcon: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: 'rgba(245,239,231,0.98)',
-    borderWidth: 1,
-    borderColor: BORDER,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
+  scroll: { paddingHorizontal: H_PAD, paddingTop: 4 },
 
-  brandText: {
-    fontSize: 30,
-    letterSpacing: -0.7,
-  },
-
-  brandTextBold: {
-    color: TEXT,
-    fontWeight: '700',
-  },
-
-  brandTextLight: {
-    color: TEXT_MUTED,
-    fontWeight: '300',
-  },
-
-  headerAction: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: 'rgba(245,239,231,0.98)',
-    borderWidth: 1,
-    borderColor: BORDER,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  content: {
-    paddingHorizontal: H_PAD,
-    paddingTop: 8,
-  },
-
-  heroShadow: {
-    position: 'absolute',
-    top: 36,
-    left: H_PAD + 14,
-    right: H_PAD + 14,
-    height: 930,
-    borderRadius: 44,
-    backgroundColor: SHADOW,
-    opacity: 0.12,
-    shadowColor: '#7F6448',
-    shadowOffset: { width: 0, height: 28 },
-    shadowOpacity: 0.08,
-    shadowRadius: 44,
-    elevation: 14,
-  },
-
-  hero: {
-    width: HERO_WIDTH,
-    borderRadius: 38,
-    overflow: 'hidden',
-    backgroundColor: CARD,
-    borderWidth: 1,
-    borderColor: 'rgba(131,108,84,0.04)',
-    marginBottom: 18,
-  },
-
-  heroTextureA: {
-    position: 'absolute',
-    top: -28,
-    left: -46,
-    width: 310,
-    height: 250,
-    borderRadius: 160,
-    backgroundColor: 'rgba(255,255,255,0.26)',
-  },
-
-  heroTextureB: {
-    position: 'absolute',
-    top: 112,
-    right: -56,
-    width: 360,
-    height: 250,
-    borderRadius: 180,
-    backgroundColor: 'rgba(233,221,206,0.28)',
-  },
-
-  heroTextureC: {
-    position: 'absolute',
-    bottom: 94,
-    right: 18,
-    width: 230,
-    height: 230,
-    borderRadius: 115,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-  },
-
-  heroTextureD: {
-    position: 'absolute',
-    left: -22,
-    bottom: 108,
-    width: 260,
-    height: 120,
-    borderRadius: 70,
-    backgroundColor: 'rgba(249,245,239,0.16)',
-  },
-
-  heroTextureE: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 320,
-    height: 70,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-
-  heroSoftWash: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-  },
-
-  heroTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingTop: 14,
-  },
-
-  heroBadge: {
-    minHeight: 50,
-    borderRadius: 25,
-    paddingHorizontal: 18,
-    backgroundColor: WHITE_GLASS,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.34)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    shadowColor: '#91745A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-
-  heroBadgeText: {
-    fontSize: 15,
-    letterSpacing: 1.1,
-    color: ACCENT_DARK,
-    fontWeight: '600',
-  },
-
-  heroEdit: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: 'rgba(255,255,255,0.54)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.28)',
-  },
-
-  heroTitle: {
-    marginTop: 34,
-    textAlign: 'center',
-    fontSize: 34,
-    color: '#5B4B3D',
-    fontStyle: 'italic',
-    fontWeight: '400',
-  },
-
-  countdownRow: {
-    marginTop: 30,
-    paddingHorizontal: 22,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  countItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-
-  countValue: {
-    fontSize: 82,
-    lineHeight: 88,
-    letterSpacing: -4,
-    color: TEXT,
-    fontWeight: '200',
-    fontVariant: ['tabular-nums'],
-  },
-
-  countLabel: {
-    marginTop: 10,
-    fontSize: 13,
-    letterSpacing: 2.5,
-    color: TEXT_SOFT,
-    fontWeight: '600',
-  },
-
-  countDivider: {
-    width: 1,
-    height: 120,
-    backgroundColor: 'rgba(113,92,71,0.12)',
-  },
-
-  timerPill: {
-    marginTop: 28,
-    alignSelf: 'center',
-    width: HERO_WIDTH - 118,
-    minHeight: 98,
+  /* ── Hero ── */
+  heroCard: {
+    width: CARD_W,
     borderRadius: 34,
-    backgroundColor: 'rgba(255,255,255,0.50)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.26)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 28,
     overflow: 'hidden',
-  },
-
-  timerValue: {
-    fontSize: 42,
-    lineHeight: 46,
-    color: TEXT,
-    fontWeight: '300',
-    letterSpacing: 0.4,
-    fontVariant: ['tabular-nums'],
-  },
-
-  timerMeta: {
-    marginLeft: 18,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-
-  timerMetaText: {
-    fontSize: 15,
-    color: TEXT_SOFT,
-    letterSpacing: 2.1,
-    marginVertical: 2,
-  },
-
-  heroFooterBand: {
-    marginTop: 30,
-    backgroundColor: 'rgba(249,245,239,0.34)',
+    backgroundColor: '#DDD0BC',
     paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 22,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(117,95,72,0.08)',
-  },
-
-  shareBtn: {
-    minHeight: 62,
-    borderRadius: 31,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 12,
-    shadowColor: '#8F7152',
-    shadowOffset: { width: 0, height: 9 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 5,
-  },
-
-  shareText: {
-    color: '#FFFDFB',
-    fontSize: 22,
-    fontWeight: '600',
-    letterSpacing: -0.3,
-  },
-
-  valueTextWrap: {
-    alignItems: 'center',
-    paddingVertical: 14,
-    marginBottom: 28,
-  },
-
-  valueTextLineOne: {
-    fontSize: 18,
-    color: TEXT_SOFT,
-    fontWeight: '400',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-
-  valueTextLineTwo: {
-    fontSize: 18,
-    color: TEXT_MUTED,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-
-  sectionBlock: {
-    marginBottom: 38,
-  },
-
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-
-  sectionTitle: {
-    fontSize: 22,
-    color: '#6F6255',
-    fontWeight: '500',
-    letterSpacing: 0.2,
-  },
-
-  sectionHairline: {
-    height: 1,
-    flex: 1,
-    marginLeft: 12,
-    backgroundColor: 'rgba(118,100,81,0.12)',
-  },
-
-  sectionHint: {
-    fontSize: 14,
-    color: TEXT_MUTED,
-    marginBottom: 14,
-  },
-
-  progressCard: {
-    minHeight: 150,
-    borderRadius: 28,
-    overflow: 'hidden',
-    paddingHorizontal: 22,
-    paddingVertical: 18,
-    backgroundColor: 'rgba(255,255,255,0.40)',
-    borderWidth: 1,
-    borderColor: 'rgba(121,101,81,0.08)',
-    shadowColor: '#8D6D52',
+    paddingTop: 16,
+    paddingBottom: 0,
+    marginBottom: 20,
+    shadowColor: '#8B6E48',
     shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    elevation: 4,
+    shadowOpacity: 0.14,
+    shadowRadius: 26,
+    elevation: 8,
   },
 
-  progressTextureOne: {
-    position: 'absolute',
-    right: -18,
-    bottom: -12,
-    width: 158,
-    height: 112,
-    borderRadius: 56,
-    backgroundColor: 'rgba(233,220,205,0.22)',
+  /* Botanical texture blobs */
+  f1: {
+    position: 'absolute', top: -30, right: -40,
+    width: 220, height: 200, borderRadius: 110,
+    backgroundColor: 'rgba(255,255,255,0.13)',
   },
-
-  progressTextureTwo: {
-    position: 'absolute',
-    left: 0,
-    bottom: 0,
-    width: 200,
-    height: 58,
+  f2: {
+    position: 'absolute', top: 50, right: 30,
+    width: 130, height: 160, borderRadius: 999,
+    backgroundColor: 'rgba(225,210,190,0.20)',
+    transform: [{ rotate: '25deg' }],
+  },
+  f3: {
+    position: 'absolute', top: 80, left: -30,
+    width: 180, height: 110, borderRadius: 999,
+    backgroundColor: 'rgba(245,235,218,0.18)',
+    transform: [{ rotate: '-18deg' }],
+  },
+  f4: {
+    position: 'absolute', top: 160, right: -20,
+    width: 150, height: 190, borderRadius: 999,
     backgroundColor: 'rgba(255,255,255,0.09)',
+    transform: [{ rotate: '12deg' }],
   },
-
-  progressTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  f5: {
+    position: 'absolute', top: 200, left: 60,
+    width: 110, height: 130, borderRadius: 999,
+    backgroundColor: 'rgba(210,195,172,0.15)',
+    transform: [{ rotate: '40deg' }],
   },
-
-  progressDateTop: {
-    fontSize: 23,
-    color: '#6B5C4E',
-    fontWeight: '400',
+  f6: {
+    position: 'absolute', bottom: 140, left: -10,
+    width: 200, height: 90, borderRadius: 999,
+    backgroundColor: 'rgba(240,228,210,0.16)',
+    transform: [{ rotate: '-8deg' }],
   },
-
-  progressPercent: {
-    fontSize: 28,
-    color: '#7D6854',
-    fontWeight: '500',
+  f7: {
+    position: 'absolute', bottom: 200, right: 40,
+    width: 100, height: 120, borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    transform: [{ rotate: '55deg' }],
   },
-
-  progressTrack: {
-    height: 10,
-    marginTop: 14,
-    borderRadius: 8,
-    backgroundColor: 'rgba(122,101,79,0.14)',
-    overflow: 'hidden',
+  f8: {
+    position: 'absolute', bottom: 80, right: -30,
+    width: 170, height: 140, borderRadius: 999,
+    backgroundColor: 'rgba(215,198,175,0.14)',
+    transform: [{ rotate: '20deg' }],
   },
-
-  progressFill: {
-    height: 10,
-    borderRadius: 8,
+  f9: {
+    position: 'absolute', top: -20, left: 80,
+    width: 160, height: 80, borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    transform: [{ rotate: '-30deg' }],
   },
-
-  progressDateBottom: {
-    fontSize: 23,
-    color: '#6B5C4E',
-    fontWeight: '400',
-    marginTop: 16,
-  },
-
-  genderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 22,
-  },
-
-  genderCard: {
-    width: (HERO_WIDTH - 28) / 3,
-    height: 126,
-    borderRadius: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.28)',
-    borderWidth: 1,
-    borderColor: 'rgba(121,101,81,0.05)',
-    shadowColor: '#8D6D52',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.04,
-    shadowRadius: 16,
-    elevation: 2,
-    overflow: 'hidden',
-  },
-
-  genderCardSelected: {
-    backgroundColor: 'rgba(255,255,255,0.72)',
-    borderColor: 'rgba(184,160,136,0.24)',
-  },
-
-  genderLabel: {
-    marginTop: 12,
-    fontSize: 19,
-    color: TEXT_SOFT,
-    fontWeight: '500',
-  },
-
-  genderLabelSelected: {
-    color: ACCENT_DARK,
-    fontWeight: '600',
-  },
-
-  customizeCard: {
-    minHeight: 280,
-    borderRadius: 32,
-    overflow: 'hidden',
-    paddingHorizontal: 22,
-    paddingTop: 24,
-    paddingBottom: 20,
-    backgroundColor: 'rgba(255,255,255,0.42)',
-    borderWidth: 1,
-    borderColor: 'rgba(121,101,81,0.08)',
-    shadowColor: '#8D6D52',
-    shadowOffset: { width: 0, height: 18 },
-    shadowOpacity: 0.08,
-    shadowRadius: 24,
-    elevation: 4,
-  },
-
-  customizeTextureA: {
-    position: 'absolute',
-    right: -24,
-    bottom: -22,
-    width: 180,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: 'rgba(232,219,204,0.26)',
-  },
-
-  customizeTextureB: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    width: 220,
-    height: 70,
+  paperWash: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(255,255,255,0.05)',
   },
 
-  customizeTitle: {
-    fontSize: 34,
-    lineHeight: 40,
-    color: '#5B4B3D',
+  heroTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.72)',
+  },
+  badgeTxt: { fontSize: 13, fontWeight: '600', letterSpacing: 0.7, color: '#8B6E50' },
+  editBtn: {
+    width: 42, height: 42, borderRadius: 21,
+    backgroundColor: 'rgba(255,255,255,0.58)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+
+  heroTitle: {
+    textAlign: 'center',
+    fontSize: 36,
+    color: '#4A3B2C',
+    fontFamily: 'Georgia',
     fontStyle: 'italic',
-    marginBottom: 14,
+    fontWeight: '400',
+    marginTop: 26,
+    marginBottom: 20,
   },
 
-  customizeBody: {
-    fontSize: 19,
-    lineHeight: 31,
-    color: TEXT_SOFT,
-    marginBottom: 30,
-    maxWidth: '92%',
+  countRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    marginBottom: 20,
+  },
+  countCol: { flex: 1, alignItems: 'center' },
+  countNum: {
+    fontSize: 86,
+    lineHeight: 90,
+    fontWeight: '400',
+    letterSpacing: -2,
+    color: '#2E2418',
+    fontFamily: 'Georgia',
+    fontVariant: ['tabular-nums'],
+  },
+  countLbl: {
+    marginTop: 6,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 2.2,
+    color: '#9E8E78',
+  },
+  countDivider: {
+    width: 1,
+    height: 96,
+    backgroundColor: 'rgba(100,78,55,0.18)',
+    marginBottom: 18,
   },
 
-  customizeButton: {
-    minHeight: 62,
-    borderRadius: 31,
+  timerPill: {
+    alignSelf: 'center',
+    width: CARD_W - 96,
+    height: 78,
+    borderRadius: 39,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.58)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.38)',
+    marginBottom: 22,
+  },
+  timerVal: {
+    fontSize: 38,
+    fontWeight: '300',
+    color: '#2E2418',
+    letterSpacing: 1,
+    fontVariant: ['tabular-nums'],
+  },
+  timerMeta: { marginLeft: 12 },
+  timerLbl: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.6,
+    color: '#9E8E78',
+    lineHeight: 17,
+  },
+
+  heroFooter: {
+    paddingHorizontal: 0,
+    paddingTop: 16,
+    paddingBottom: 20,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(110,88,60,0.08)',
+    backgroundColor: 'rgba(248,242,234,0.30)',
+  },
+  shareBtn: {
+    height: 54,
+    borderRadius: 27,
     overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+  },
+  shareTxt: { fontSize: 18, fontWeight: '600', color: '#FFF8EF', letterSpacing: -0.1 },
+
+  /* ── Value line ── */
+  valueLine: {
+    alignItems: 'center',
+    paddingVertical: 10,
+    marginBottom: 24,
+  },
+  valueT1: {
+    fontSize: 15, color: '#9E8E80', textAlign: 'center',
+    fontWeight: '400', lineHeight: 22, marginBottom: 5,
+  },
+  valueT2: {
+    fontSize: 15, color: '#B0A090', textAlign: 'center', fontWeight: '500',
   },
 
-  customizeButtonText: {
-    color: '#FFFDFB',
-    fontSize: 21,
-    fontWeight: '600',
-    letterSpacing: -0.2,
+  /* ── Sections ── */
+  section:  { marginBottom: 28 },
+  secHead:  { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
+  secTitle: { fontSize: 20, fontWeight: '600', color: '#5A4A3C', letterSpacing: -0.2 },
+  secLine:  { flex: 1, height: 1, backgroundColor: 'rgba(100,80,60,0.13)', marginLeft: 12 },
+  secSub:   { fontSize: 13, color: '#B0A090', marginBottom: 12 },
+
+  /* ── Progress card ── */
+  progCard: {
+    borderRadius: 22,
+    overflow: 'hidden',
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    backgroundColor: 'rgba(255,255,255,0.48)',
+    borderWidth: 1,
+    borderColor: 'rgba(120,100,78,0.07)',
+    shadowColor: '#8B6E4E',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.07,
+    shadowRadius: 14,
+    elevation: 3,
   },
+  progTex: {
+    position: 'absolute', right: -18, bottom: -16,
+    width: 150, height: 110, borderRadius: 55,
+    backgroundColor: 'rgba(220,204,182,0.18)',
+  },
+  progTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    marginBottom: 12,
+  },
+  progDate: { fontSize: 18, color: '#6A5A4A', fontWeight: '400' },
+  progPct:  { fontSize: 22, color: '#7A6A56', fontWeight: '500' },
+  progTrack: {
+    height: 8, borderRadius: 4,
+    backgroundColor: 'rgba(120,100,78,0.12)',
+    overflow: 'hidden', marginBottom: 12,
+  },
+  progFill: { height: 8, borderRadius: 4 },
+
+  /* ── Gender tiles — 4 as in mockup ── */
+  tileRow: { flexDirection: 'row', gap: 8 },
+  tile: {
+    flex: 1,
+    height: 100,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.36)',
+    borderWidth: 1,
+    borderColor: 'rgba(120,100,78,0.07)',
+    shadowColor: '#8B6E4E',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  tileActive: {
+    backgroundColor: 'rgba(255,255,255,0.90)',
+    borderColor: 'rgba(184,144,96,0.24)',
+  },
+  tileLbl: { marginTop: 7, fontSize: 13, color: '#A09082', fontWeight: '500' },
+  tileLblActive: { color: '#B89060', fontWeight: '700' },
+
+  /* ── Customize card ── */
+  custCard: {
+    borderRadius: 26,
+    overflow: 'hidden',
+    padding: 22,
+    backgroundColor: 'rgba(255,255,255,0.48)',
+    borderWidth: 1,
+    borderColor: 'rgba(120,100,78,0.07)',
+    shadowColor: '#8B6E4E',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 4,
+    marginBottom: 16,
+  },
+  custTex: {
+    position: 'absolute', right: -20, top: -20,
+    width: 160, height: 160, borderRadius: 80,
+    backgroundColor: 'rgba(220,204,182,0.15)',
+  },
+  custTitle: {
+    fontSize: 30,
+    lineHeight: 36,
+    color: '#3A2E22',
+    fontFamily: 'Georgia',
+    fontStyle: 'italic',
+    fontWeight: '400',
+    marginBottom: 10,
+  },
+  custBody: {
+    fontSize: 15, lineHeight: 22,
+    color: '#8A7A6A', marginBottom: 22,
+  },
+  custBtn: {
+    height: 54, borderRadius: 27,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  custBtnTxt: { fontSize: 17, fontWeight: '600', color: '#FFF8EF', letterSpacing: -0.1 },
 });
