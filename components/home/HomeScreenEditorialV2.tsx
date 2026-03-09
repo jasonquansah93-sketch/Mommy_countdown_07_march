@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useProfile } from '../../context/ProfileContext';
 
-const { width: SW } = Dimensions.get('window');
+const { width: SW, height: SH } = Dimensions.get('window');
 const H_PAD = 20;
 const CW = SW - H_PAD * 2;
 
@@ -88,12 +88,23 @@ export default function HomeScreenEditorialV2() {
   return (
     <View style={s.screen}>
 
-      {/* Clean warm gradient — no dominant overlay blobs */}
+      {/* ── Warm cream gradient base ── */}
       <LinearGradient
-        colors={['#EDE6D8', '#E6DDD0', '#DACEC0', '#D4C7B2']}
-        start={{ x: 0.15, y: 0 }} end={{ x: 0.85, y: 1 }}
+        colors={['#EDE8DC', '#E5DDD0', '#D9CEBC', '#D0C3AC']}
+        start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }}
         style={StyleSheet.absoluteFillObject}
       />
+
+      {/* ── Botanical background texture (visible through frosted cards) ── */}
+      {/* Upper-right cluster — dominant in mockup */}
+      <Blob style={{ top: -50, right: -65, width: 330, height: 290, borderRadius: 165, backgroundColor: 'rgba(255,252,245,0.30)', transform: [{ rotate: '12deg' }] }} />
+      <Blob style={{ top:  18, right:  20, width: 190, height: 250, borderRadius: 999,  backgroundColor: 'rgba(232,218,198,0.24)', transform: [{ rotate: '29deg' }] }} />
+      <Blob style={{ top:  75, right:  86, width:  64, height:  92, borderRadius: 999,  backgroundColor: 'rgba(255,250,240,0.22)', transform: [{ rotate: '-26deg' }] }} />
+      <Blob style={{ top:  42, right: 120, width:  38, height:  56, borderRadius: 999,  backgroundColor: 'rgba(255,255,255,0.20)', transform: [{ rotate: '44deg'  }] }} />
+      {/* Lower accents */}
+      <Blob style={{ top: SH * 0.52, right: -32, width: 210, height: 168, borderRadius: 999, backgroundColor: 'rgba(228,216,198,0.15)', transform: [{ rotate: '10deg'  }] }} />
+      <Blob style={{ top: SH * 0.67, left:  -32, width: 250, height: 126, borderRadius: 999, backgroundColor: 'rgba(240,228,210,0.14)', transform: [{ rotate: '-9deg'  }] }} />
+      <Blob style={{ top: SH * 0.83, right: -42, width: 210, height: 168, borderRadius: 999, backgroundColor: 'rgba(255,248,234,0.12)', transform: [{ rotate: '22deg'  }] }} />
 
       {/* ══ HEADER ══ */}
       <View style={[s.header, { paddingTop: insets.top + 8 }]}>
@@ -122,24 +133,26 @@ export default function HomeScreenEditorialV2() {
         contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + 108 }]}
       >
 
-        {/* ══════════════════════════════════
+        {/* ══════════════════════════════════════
             1. HERO CARD
-        ══════════════════════════════════ */}
+            Frosted glass over botanical bg
+        ══════════════════════════════════════ */}
         <View style={s.hero}>
-          {/* Hero card warm gradient fill */}
+          {/* Frosted warm-white overlay */}
           <LinearGradient
-            colors={['rgba(235,225,210,0.94)', 'rgba(220,208,192,0.96)', 'rgba(210,196,178,0.92)']}
+            colors={[
+              'rgba(255,255,255,0.55)',
+              'rgba(255,252,246,0.48)',
+              'rgba(252,246,238,0.45)',
+            ]}
             start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }}
             style={StyleSheet.absoluteFillObject}
           />
-          {/* Local botanical texture — stays inside hero card only */}
-          <Blob style={{ top: -44, right: -52, width: 250, height: 220, borderRadius: 130, backgroundColor: 'rgba(255,255,255,0.15)', transform: [{ rotate: '12deg' }] }} />
-          <Blob style={{ top:  52, right: -35, width: 188, height: 240, borderRadius: 999,  backgroundColor: 'rgba(224,212,194,0.20)', transform: [{ rotate: '26deg' }] }} />
-          <Blob style={{ top: 118, left:  -44, width: 192, height: 112, borderRadius: 999,  backgroundColor: 'rgba(245,234,218,0.18)', transform: [{ rotate: '-18deg' }] }} />
-          <Blob style={{ top: 250, right:  -8, width: 140, height: 180, borderRadius: 999,  backgroundColor: 'rgba(255,255,255,0.09)', transform: [{ rotate: '14deg' }] }} />
-          <Blob style={{ bottom: 48, right: -24, width: 198, height: 142, borderRadius: 999, backgroundColor: 'rgba(226,214,198,0.14)', transform: [{ rotate: '22deg' }] }} />
-          <Blob style={{ top:  48, right:  82, width: 40, height: 60, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.22)', transform: [{ rotate: '40deg'  }] }} />
-          <Blob style={{ top: 106, left:   58, width: 34, height: 54, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', transform: [{ rotate: '-34deg' }] }} />
+          {/* Botanical hints inside hero (simulate bg showing through) */}
+          <Blob style={{ top: -36, right: -44, width: 230, height: 208, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.20)', transform: [{ rotate: '10deg' }] }} />
+          <Blob style={{ top:  44, right: -26, width: 162, height: 218, borderRadius: 999, backgroundColor: 'rgba(234,220,200,0.18)', transform: [{ rotate: '26deg' }] }} />
+          <Blob style={{ top: 178, left:  -34, width: 164, height:  94, borderRadius: 999, backgroundColor: 'rgba(248,240,224,0.16)', transform: [{ rotate: '-14deg' }] }} />
+          <Blob style={{ bottom: 38, right: -18, width: 174, height: 128, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.11)', transform: [{ rotate: '19deg' }] }} />
 
           {/* Badge + Edit row */}
           <View style={s.heroTop}>
@@ -159,7 +172,7 @@ export default function HomeScreenEditorialV2() {
           {/* Headline */}
           <Text style={s.heroTitle}>Meeting you in...</Text>
 
-          {/* Countdown — weeks / days / hours */}
+          {/* Countdown */}
           <View style={s.countRow}>
             <View style={s.countCol}>
               <Text style={s.countNum}>{pad(time.weeks)}</Text>
@@ -177,10 +190,10 @@ export default function HomeScreenEditorialV2() {
             </View>
           </View>
 
-          {/* Timer pill — min:sec */}
+          {/* Timer pill */}
           <View style={s.timerPill}>
             <LinearGradient
-              colors={['rgba(255,255,255,0.88)', 'rgba(252,246,238,0.82)']}
+              colors={['rgba(255,255,255,0.94)', 'rgba(252,248,242,0.90)']}
               style={StyleSheet.absoluteFillObject}
             />
             <Text style={s.timerNum}>{pad(time.minutes)}:{pad(time.seconds)}</Text>
@@ -190,48 +203,35 @@ export default function HomeScreenEditorialV2() {
             </View>
           </View>
 
-          {/* Share CTA */}
+          {/* Share CTA — full pill */}
           <TouchableOpacity style={s.shareBtn} onPress={onShare} activeOpacity={0.88}>
             <LinearGradient
-              colors={['#BA9268', '#A87E52', '#BA9268']}
+              colors={['#C09A72', '#A87E52', '#C09A72']}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
               style={StyleSheet.absoluteFillObject}
             />
-            <Ionicons name="share-outline" size={17} color="#FFF8EF" style={{ marginRight: 9 }} />
+            <Ionicons name="share-outline" size={17} color="rgba(255,248,238,0.95)" style={{ marginRight: 9 }} />
             <Text style={s.shareTxt}>Share our countdown</Text>
           </TouchableOpacity>
         </View>
 
-        {/* ══════════════════════════════════
-            2. VALUE LINE
-        ══════════════════════════════════ */}
-        <View style={s.valueLine}>
-          <Text style={s.valueT1}>
-            "Every moment before hello{'\n'}is worth remembering."
-          </Text>
-          <Text style={s.valueT2}>Upgrade to capture it all.</Text>
-        </View>
-
-        {/* ══════════════════════════════════
-            3. TIME REMAINING
-        ══════════════════════════════════ */}
+        {/* ══════════════════════════════════════
+            2. TIME REMAINING
+        ══════════════════════════════════════ */}
         <View style={s.sec}>
           <View style={s.secHead}>
             <Text style={s.secTitle}>Time remaining</Text>
             <View style={s.secLine} />
           </View>
-          <Text style={s.secSub}>Your journey progress</Text>
+          <Text style={s.secSub}>Tap for weeks</Text>
 
+          {/* Progress card — near-white / frosted */}
           <View style={s.progCard}>
-            {/* Warm paper card gradient */}
             <LinearGradient
-              colors={['rgba(240,231,218,0.96)', 'rgba(232,220,204,0.94)', 'rgba(225,212,196,0.92)']}
+              colors={['rgba(255,255,255,0.92)', 'rgba(255,253,250,0.90)', 'rgba(252,248,242,0.88)']}
               start={{ x: 0.05, y: 0 }} end={{ x: 0.95, y: 1 }}
               style={StyleSheet.absoluteFillObject}
             />
-            {/* Subtle internal texture */}
-            <Blob style={{ right: -18, bottom: -12, width: 168, height: 120, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.12)', transform: [{ rotate: '18deg' }] }} />
-            <Blob style={{ left:  -12, top:    -10, width: 124, height:  78, borderRadius: 999, backgroundColor: 'rgba(245,234,218,0.16)', transform: [{ rotate: '-12deg' }] }} />
 
             <View style={s.progTop}>
               <Text style={s.progDate}>Start  {fmt(startDate)}</Text>
@@ -239,7 +239,7 @@ export default function HomeScreenEditorialV2() {
             </View>
             <View style={s.progTrack}>
               <LinearGradient
-                colors={['#C4996C', '#B88A5E', '#C4A070']}
+                colors={['#B8895A', '#C49A6E', '#B8895A']}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={[s.progFill, { width: `${pct}%` as any }]}
               />
@@ -248,9 +248,9 @@ export default function HomeScreenEditorialV2() {
           </View>
         </View>
 
-        {/* ══════════════════════════════════
-            4. YOUR PREGNANCY — 4 tiles
-        ══════════════════════════════════ */}
+        {/* ══════════════════════════════════════
+            3. YOUR PREGNANCY — 4 tiles
+        ══════════════════════════════════════ */}
         <View style={s.sec}>
           <View style={s.secHead}>
             <Text style={s.secTitle}>Your pregnancy</Text>
@@ -278,15 +278,15 @@ export default function HomeScreenEditorialV2() {
                   <LinearGradient
                     colors={
                       sel
-                        ? ['rgba(255,255,255,0.98)', 'rgba(252,248,242,0.94)']
-                        : ['rgba(238,230,218,0.72)', 'rgba(230,220,206,0.64)']
+                        ? ['rgba(255,255,255,0.98)', 'rgba(255,254,252,0.96)']
+                        : ['rgba(255,255,255,0.60)', 'rgba(255,252,246,0.52)']
                     }
                     style={StyleSheet.absoluteFillObject}
                   />
                   <Ionicons
                     name={item.icon as any}
-                    size={26}
-                    color={sel ? '#A87E52' : '#A09080'}
+                    size={28}
+                    color={sel ? '#A07A50' : '#B0A090'}
                   />
                   <Text style={[s.tileLbl, sel && s.tileLblSel]}>{item.label}</Text>
                 </TouchableOpacity>
@@ -295,38 +295,37 @@ export default function HomeScreenEditorialV2() {
           </View>
         </View>
 
-        {/* ══════════════════════════════════
-            5. MAKE IT TRULY YOURS
-        ══════════════════════════════════ */}
+        {/* ══════════════════════════════════════
+            4. MAKE IT TRULY YOURS
+        ══════════════════════════════════════ */}
         <View style={s.custCard}>
-          {/* Warm paper gradient with botanical depth */}
+          {/* Near-white frosted surface */}
           <LinearGradient
-            colors={['rgba(240,232,218,0.96)', 'rgba(230,220,204,0.94)', 'rgba(222,210,193,0.92)']}
+            colors={['rgba(255,255,255,0.92)', 'rgba(255,253,250,0.90)', 'rgba(252,248,242,0.88)']}
             start={{ x: 0.05, y: 0 }} end={{ x: 0.95, y: 1 }}
             style={StyleSheet.absoluteFillObject}
           />
-          {/* Floral depth blobs */}
-          <Blob style={{ right: -28, top:    -22, width: 190, height: 174, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.16)', transform: [{ rotate: '13deg'  }] }} />
-          <Blob style={{ left:  -18, bottom: -18, width: 228, height: 122, borderRadius: 999, backgroundColor: 'rgba(218,206,188,0.22)', transform: [{ rotate: '-10deg' }] }} />
-          <Blob style={{ right:  36, bottom:  20, width:  72, height:  92, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.10)', transform: [{ rotate: '28deg'  }] }} />
-          <Blob style={{ left:   82, top:    -16, width:  60, height:  80, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.13)', transform: [{ rotate: '-22deg' }] }} />
+          {/* Subtle botanical depth */}
+          <Blob style={{ right: -26, top:  -20, width: 180, height: 164, borderRadius: 999, backgroundColor: 'rgba(232,220,204,0.24)', transform: [{ rotate: '12deg'  }] }} />
+          <Blob style={{ left:  -16, bottom: -14, width: 218, height: 110, borderRadius: 999, backgroundColor: 'rgba(226,214,196,0.22)', transform: [{ rotate: '-9deg' }] }} />
 
-          <Text style={s.custTitle}>Make it{'\n'}truly yours</Text>
+          <Text style={s.custTitle}>Make it truly yours</Text>
           <Text style={s.custBody}>
-            Personalize your countdown with fonts,{'\n'}colors, and photos that tell your story.
+            Personalize your countdown with fonts,{'\n'}colors, and photos
           </Text>
 
+          {/* CTA — full pill */}
           <TouchableOpacity
             style={s.custBtn}
             onPress={() => router.push('/(tabs)/design')}
             activeOpacity={0.88}
           >
             <LinearGradient
-              colors={['#BA9268', '#A87E52', '#BA9268']}
+              colors={['#C09A72', '#A87E52', '#C09A72']}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
               style={StyleSheet.absoluteFillObject}
             />
-            <Ionicons name="pencil-outline" size={15} color="#FFF8EF" style={{ marginRight: 9 }} />
+            <Ionicons name="pencil-outline" size={15} color="rgba(255,248,238,0.95)" style={{ marginRight: 9 }} />
             <Text style={s.custBtnTxt}>Customize design</Text>
           </TouchableOpacity>
         </View>
@@ -336,20 +335,20 @@ export default function HomeScreenEditorialV2() {
   );
 }
 
-/* ──────────────────────────── Styles ──────────────────────────── */
+/* ──────────────────────────────── Styles ──────────────────────────────── */
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#E8DFD2' },
   ab:     { position: 'absolute' },
 
   /* ── Header ── */
-  header:     {
+  header: {
     paddingHorizontal: H_PAD, paddingBottom: 10,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center' },
   hHeart: {
     width: 34, height: 34, borderRadius: 17,
-    backgroundColor: 'rgba(248,242,232,0.90)',
+    backgroundColor: 'rgba(248,242,232,0.92)',
     alignItems: 'center', justifyContent: 'center', marginRight: 9,
   },
   brand:  { fontSize: 21, letterSpacing: -0.3 },
@@ -357,7 +356,7 @@ const s = StyleSheet.create({
   brandL: { color: '#A09282', fontWeight: '300' },
   hGear: {
     width: 34, height: 34, borderRadius: 17,
-    backgroundColor: 'rgba(248,242,232,0.90)',
+    backgroundColor: 'rgba(248,242,232,0.92)',
     alignItems: 'center', justifyContent: 'center',
   },
 
@@ -368,43 +367,47 @@ const s = StyleSheet.create({
     width: CW,
     borderRadius: 28,
     overflow: 'hidden',
-    backgroundColor: '#D8CCBA',
+    backgroundColor: 'rgba(248,244,236,0.38)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.48)',
     paddingHorizontal: 20,
     paddingTop: 18,
-    paddingBottom: 20,
-    marginBottom: 18,
+    paddingBottom: 22,
+    marginBottom: 20,
     shadowColor: '#7A5E3C',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.13,
+    shadowRadius: 20,
+    elevation: 6,
   },
   heroTop:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   badge: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 13, paddingVertical: 8,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.72)',
+    paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.78)',
   },
   badgeTxt: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, color: '#8B6E50' },
   editBtn: {
-    width: 34, height: 34, borderRadius: 17,
-    backgroundColor: 'rgba(255,255,255,0.58)',
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.64)',
     alignItems: 'center', justifyContent: 'center',
   },
 
+  /* ── Hero headline — 38 px matches mockup proportion ── */
   heroTitle: {
     textAlign: 'center',
-    fontSize: 30,
+    fontSize: 38,
     color: '#3A2A1C',
     fontFamily: 'Georgia',
     fontStyle: 'italic',
     fontWeight: '400',
     letterSpacing: 0.2,
-    marginTop: 22,
-    marginBottom: 18,
+    marginTop: 20,
+    marginBottom: 16,
   },
 
+  /* ── Countdown ── */
   countRow: {
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'center', marginBottom: 18,
@@ -433,6 +436,7 @@ const s = StyleSheet.create({
     marginBottom: 14,
   },
 
+  /* ── Timer pill ── */
   timerPill: {
     alignSelf: 'center',
     width: CW - 88,
@@ -442,7 +446,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.52)',
+    backgroundColor: 'rgba(255,255,255,0.55)',
     marginBottom: 18,
   },
   timerNum: {
@@ -453,7 +457,7 @@ const s = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   timerMeta: { marginLeft: 10 },
-  timerLbl:  {
+  timerLbl: {
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1.6,
@@ -461,34 +465,16 @@ const s = StyleSheet.create({
     lineHeight: 16,
   },
 
+  /* ── Share button — full pill ── */
   shareBtn: {
-    height: 50,
-    borderRadius: 14,
+    height: 52,
+    borderRadius: 26,
     overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
   shareTxt: { fontSize: 16, fontWeight: '600', color: '#FFF8EF', letterSpacing: 0.1 },
-
-  /* ── Value line ── */
-  valueLine: { alignItems: 'center', paddingVertical: 10, marginBottom: 22 },
-  valueT1: {
-    fontSize: 14,
-    color: '#9E8E7E',
-    textAlign: 'center',
-    fontFamily: 'Georgia',
-    fontStyle: 'italic',
-    lineHeight: 21,
-    marginBottom: 5,
-  },
-  valueT2: {
-    fontSize: 12,
-    color: '#B8A894',
-    textAlign: 'center',
-    fontWeight: '500',
-    letterSpacing: 0.4,
-  },
 
   /* ── Section layout ── */
   sec:      { marginBottom: 22 },
@@ -507,18 +493,18 @@ const s = StyleSheet.create({
   },
   secSub: { fontSize: 12, color: '#B0A090', marginBottom: 10, letterSpacing: 0.2 },
 
-  /* ── Progress card ── */
+  /* ── Progress card — near-white frosted ── */
   progCard: {
     borderRadius: 18,
     overflow: 'hidden',
     paddingHorizontal: 18,
     paddingVertical: 16,
-    backgroundColor: '#D8CCBA',
+    backgroundColor: 'rgba(255,255,255,0.80)',
     borderWidth: 0.5,
-    borderColor: 'rgba(120,95,70,0.10)',
+    borderColor: 'rgba(180,155,125,0.15)',
     shadowColor: '#7A5E3C',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.09,
+    shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 3,
   },
@@ -529,46 +515,45 @@ const s = StyleSheet.create({
     marginBottom: 10,
   },
   progDate: {
-    fontSize: 13,
-    color: '#6A5A48',
+    fontSize: 15,
+    color: '#5A4A38',
     fontWeight: '500',
     letterSpacing: 0.1,
   },
-  progDateBot: {
-    fontSize: 13,
-    color: '#6A5A48',
-    fontWeight: '500',
-    letterSpacing: 0.1,
-    marginTop: 10,
-    textAlign: 'right',
-  },
+  /* "94%" — larger, bold, left-aligned with value */
   progPct: {
-    fontSize: 19,
-    color: '#6A5A46',
-    fontFamily: 'Georgia',
-    fontStyle: 'italic',
-    fontWeight: '400',
+    fontSize: 22,
+    color: '#5A4A38',
+    fontWeight: '600',
   },
   progTrack: {
-    height: 5,
+    height: 6,
     borderRadius: 3,
     backgroundColor: 'rgba(120,95,70,0.16)',
     overflow: 'hidden',
   },
-  progFill: { height: 5, borderRadius: 3 },
+  progFill: { height: 6, borderRadius: 3 },
+  /* "Due" date — left-aligned, same style as start */
+  progDateBot: {
+    fontSize: 15,
+    color: '#5A4A38',
+    fontWeight: '500',
+    letterSpacing: 0.1,
+    marginTop: 10,
+  },
 
   /* ── Pregnancy tiles ── */
-  tileRow: { flexDirection: 'row', gap: 10 },
+  tileRow: { flexDirection: 'row', gap: 8 },
   tile: {
     flex: 1,
-    height: 90,
+    height: 88,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    backgroundColor: '#CBBFAD',
+    backgroundColor: 'rgba(255,255,255,0.42)',
     borderWidth: 0.5,
-    borderColor: 'rgba(120,95,70,0.10)',
+    borderColor: 'rgba(180,155,125,0.18)',
     shadowColor: '#7A5E3C',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.07,
@@ -576,7 +561,7 @@ const s = StyleSheet.create({
     elevation: 2,
   },
   tileSel: {
-    borderColor: 'rgba(168,126,82,0.28)',
+    borderColor: 'rgba(168,126,82,0.30)',
     shadowOpacity: 0.12,
     shadowRadius: 10,
     elevation: 4,
@@ -584,19 +569,19 @@ const s = StyleSheet.create({
   tileLbl:    { marginTop: 6, fontSize: 11, color: '#A09080', fontWeight: '500', letterSpacing: 0.3 },
   tileLblSel: { color: '#A07A52', fontWeight: '700' },
 
-  /* ── Customize card ── */
+  /* ── Customize card — near-white frosted ── */
   custCard: {
     borderRadius: 22,
     overflow: 'hidden',
     paddingHorizontal: 20,
     paddingTop: 24,
     paddingBottom: 22,
-    backgroundColor: '#D8CCBA',
+    backgroundColor: 'rgba(255,255,255,0.80)',
     borderWidth: 0.5,
-    borderColor: 'rgba(120,95,70,0.10)',
+    borderColor: 'rgba(180,155,125,0.15)',
     shadowColor: '#7A5E3C',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.11,
+    shadowOpacity: 0.09,
     shadowRadius: 16,
     elevation: 4,
     marginBottom: 16,
@@ -617,9 +602,10 @@ const s = StyleSheet.create({
     marginBottom: 20,
     letterSpacing: 0.1,
   },
+  /* CTA — full pill matching share button */
   custBtn: {
-    height: 48,
-    borderRadius: 13,
+    height: 52,
+    borderRadius: 26,
     overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
