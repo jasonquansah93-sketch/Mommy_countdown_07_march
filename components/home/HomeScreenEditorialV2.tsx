@@ -128,18 +128,22 @@ export default function HomeScreenEditorialV2() {
             left:0/right:0 innerhalb contentContainer = volle Bildschirmbreite
         ══════════════════════════════════════════════ */}
         <View style={s.botLayer} pointerEvents="none">
-          {/* Oben-rechts: dominante Blüten-Cluster (wie im Mockup) */}
-          <Blob style={{ top: -30, right: -10, width: 310, height: 295, borderRadius: 158, backgroundColor: 'rgba(255,252,244,0.34)', transform: [{ rotate: '14deg'  }] }} />
-          <Blob style={{ top:  10, right:  22, width: 172, height: 234, borderRadius: 999,  backgroundColor: 'rgba(226,212,192,0.28)', transform: [{ rotate: '30deg'  }] }} />
-          <Blob style={{ top:  55, right:  78, width:  64, height:  92, borderRadius: 999,  backgroundColor: 'rgba(255,250,240,0.24)', transform: [{ rotate: '-26deg' }] }} />
-          <Blob style={{ top:  34, right: 116, width:  38, height:  56, borderRadius: 999,  backgroundColor: 'rgba(255,255,255,0.22)', transform: [{ rotate: '44deg'  }] }} />
-          {/* Oben-links: weicher Akzent */}
-          <Blob style={{ top:  85, left:  -16, width: 155, height:  95, borderRadius: 999,  backgroundColor: 'rgba(238,226,208,0.20)', transform: [{ rotate: '-14deg' }] }} />
-          {/* Mitte — blassen Akzente, die beim Scrollen sichtbar werden */}
-          <Blob style={{ top: 430, right: -18, width: 185, height: 145, borderRadius: 999,  backgroundColor: 'rgba(226,214,196,0.14)', transform: [{ rotate: '10deg'  }] }} />
-          <Blob style={{ top: 550, left:  -20, width: 205, height: 106, borderRadius: 999,  backgroundColor: 'rgba(236,224,206,0.12)', transform: [{ rotate: '-8deg'  }] }} />
-          {/* Unten — sehr subtil */}
-          <Blob style={{ top: 900, right: -14, width: 168, height: 130, borderRadius: 999,  backgroundColor: 'rgba(226,214,196,0.10)', transform: [{ rotate: '14deg'  }] }} />
+          {/* ── Oben-rechts: dominanter Blüten-Cluster (Mockup: sehr sichtbar) ── */}
+          <Blob style={{ top: -30, right: -10, width: 320, height: 305, borderRadius: 162, backgroundColor: 'rgba(255,252,244,0.48)', transform: [{ rotate: '14deg'  }] }} />
+          <Blob style={{ top:  10, right:  18, width: 178, height: 244, borderRadius: 999,  backgroundColor: 'rgba(226,212,192,0.42)', transform: [{ rotate: '30deg'  }] }} />
+          <Blob style={{ top:  55, right:  74, width:  68, height:  96, borderRadius: 999,  backgroundColor: 'rgba(255,250,240,0.38)', transform: [{ rotate: '-26deg' }] }} />
+          <Blob style={{ top:  32, right: 112, width:  40, height:  58, borderRadius: 999,  backgroundColor: 'rgba(255,255,255,0.34)', transform: [{ rotate: '44deg'  }] }} />
+          {/* ── Oben-links: weicher Akzent ── */}
+          <Blob style={{ top:  80, left:  -16, width: 162, height: 100, borderRadius: 999,  backgroundColor: 'rgba(238,226,208,0.32)', transform: [{ rotate: '-14deg' }] }} />
+          {/* ── Mitte-rechts (hinter Time remaining) ── */}
+          <Blob style={{ top: 420, right: -20, width: 200, height: 158, borderRadius: 999,  backgroundColor: 'rgba(228,214,196,0.28)', transform: [{ rotate: '10deg'  }] }} />
+          <Blob style={{ top: 480, right:  60, width:  56, height:  80, borderRadius: 999,  backgroundColor: 'rgba(255,250,240,0.24)', transform: [{ rotate: '-32deg' }] }} />
+          {/* ── Mitte-links (hinter Pregnancy-Sektion) ── */}
+          <Blob style={{ top: 560, left:  -22, width: 218, height: 112, borderRadius: 999,  backgroundColor: 'rgba(236,224,206,0.26)', transform: [{ rotate: '-8deg'  }] }} />
+          <Blob style={{ top: 640, left:   44, width:  52, height:  72, borderRadius: 999,  backgroundColor: 'rgba(255,252,244,0.22)', transform: [{ rotate: '28deg'  }] }} />
+          {/* ── Unten-rechts (hinter Customize Card) ── */}
+          <Blob style={{ top: 860, right: -16, width: 192, height: 148, borderRadius: 999,  backgroundColor: 'rgba(226,214,196,0.24)', transform: [{ rotate: '18deg'  }] }} />
+          <Blob style={{ top: 980, left:  -14, width: 175, height: 108, borderRadius: 999,  backgroundColor: 'rgba(238,226,208,0.20)', transform: [{ rotate: '-12deg' }] }} />
         </View>
 
         {/* ════════════════════════════════════════
@@ -229,7 +233,7 @@ export default function HomeScreenEditorialV2() {
           {/* Progress Card — nah-weiß, frosted */}
           <View style={s.progCard}>
             <LinearGradient
-              colors={['rgba(255,255,255,0.94)', 'rgba(255,253,250,0.92)', 'rgba(252,248,242,0.90)']}
+              colors={['rgba(252,246,238,0.94)', 'rgba(248,241,231,0.92)', 'rgba(244,236,224,0.90)']}
               start={{ x: 0.05, y: 0 }} end={{ x: 0.95, y: 1 }}
               style={StyleSheet.absoluteFillObject}
             />
@@ -300,13 +304,14 @@ export default function HomeScreenEditorialV2() {
         ════════════════════════════════════════ */}
         <View style={s.custCard}>
           <LinearGradient
-            colors={['rgba(255,255,255,0.94)', 'rgba(255,253,250,0.92)', 'rgba(252,248,242,0.90)']}
+            colors={['rgba(252,246,238,0.94)', 'rgba(248,241,231,0.92)', 'rgba(244,236,224,0.90)']}
             start={{ x: 0.05, y: 0 }} end={{ x: 0.95, y: 1 }}
             style={StyleSheet.absoluteFillObject}
           />
-          {/* Subtile botanische Tiefe innerhalb der Card */}
-          <Blob style={{ right: -20, top:  -16, width: 168, height: 152, borderRadius: 999, backgroundColor: 'rgba(230,218,202,0.22)', transform: [{ rotate: '12deg'  }] }} />
-          <Blob style={{ left:  -12, bottom: -10, width: 200, height: 100, borderRadius: 999, backgroundColor: 'rgba(224,212,196,0.20)', transform: [{ rotate: '-9deg' }] }} />
+          {/* Botanische Tiefe innerhalb der Card — stärker sichtbar */}
+          <Blob style={{ right: -18, top:  -14, width: 175, height: 158, borderRadius: 999, backgroundColor: 'rgba(228,214,196,0.38)', transform: [{ rotate: '12deg'  }] }} />
+          <Blob style={{ left:  -10, bottom:  -8, width: 205, height: 105, borderRadius: 999, backgroundColor: 'rgba(222,208,190,0.34)', transform: [{ rotate: '-9deg' }] }} />
+          <Blob style={{ right:  40, bottom:  18, width:  62, height:  84, borderRadius: 999, backgroundColor: 'rgba(235,222,204,0.28)', transform: [{ rotate: '32deg'  }] }} />
 
           <Text style={s.custTitle}>Make it truly yours</Text>
           <Text style={s.custBody}>
@@ -440,7 +445,7 @@ const s = StyleSheet.create({
   /* Timer Pill — weiß, klar sichtbar auf botanischem Hintergrund */
   timerPill: {
     alignSelf: 'center',
-    width: CW - 60,
+    width: CW - 40,
     height: 68,
     borderRadius: 34,
     flexDirection: 'row',
@@ -484,11 +489,11 @@ const s = StyleSheet.create({
   secLine:  { flex: 1, height: 1, backgroundColor: 'rgba(100,80,60,0.14)', marginLeft: 10 },
   secSub:   { fontSize: 12, color: '#B0A090', marginBottom: 10, letterSpacing: 0.2 },
 
-  /* ── Progress Card — nah-weiß, frosted ── */
+  /* ── Progress Card — warmes Cremeweiß (nicht kalt-weiß) ── */
   progCard: {
     borderRadius: 18, overflow: 'hidden',
     paddingHorizontal: 18, paddingVertical: 16,
-    backgroundColor: 'rgba(255,255,255,0.82)',
+    backgroundColor: 'rgba(250,244,236,0.90)',
     borderWidth: 0.5, borderColor: 'rgba(180,155,125,0.15)',
     shadowColor: '#7A5E3C',
     shadowOffset: { width: 0, height: 4 },
@@ -520,11 +525,11 @@ const s = StyleSheet.create({
   tileLbl:    { marginTop: 6, fontSize: 11, color: '#A09080', fontWeight: '500', letterSpacing: 0.3 },
   tileLblSel: { color: '#A07A52', fontWeight: '700' },
 
-  /* ── Customize Card — nah-weiß, frosted ── */
+  /* ── Customize Card — warmes Cremeweiß (nicht kalt-weiß) ── */
   custCard: {
     borderRadius: 22, overflow: 'hidden',
     paddingHorizontal: 20, paddingTop: 24, paddingBottom: 22,
-    backgroundColor: 'rgba(255,255,255,0.82)',
+    backgroundColor: 'rgba(250,244,236,0.90)',
     borderWidth: 0.5, borderColor: 'rgba(180,155,125,0.15)',
     shadowColor: '#7A5E3C',
     shadowOffset: { width: 0, height: 6 },
