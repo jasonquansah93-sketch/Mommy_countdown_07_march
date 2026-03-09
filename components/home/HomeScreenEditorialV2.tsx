@@ -1,9 +1,4 @@
-/**
- * HomeScreenEditorialV2 — full editorial redesign
- * Design language: warm sepia · cream · soft beige · ultra-light numbers
- * italic headlines · generous air · refined orb textures · no utilitarian widgets
- */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -19,1029 +14,889 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 import { useProfile } from '../../context/ProfileContext';
-import {
-  getWeeksAndDays,
-  getTimeUntilDueMs,
-  getJourneyProgress,
-  formatDateLabel,
-  formatDateShort,
-} from '../../utils/date';
-import { loadJSON, saveJSON } from '../../utils/storage';
 
-// ─── Design tokens ─────────────────────────────────────────────────────────
-const SCREEN_W    = Dimensions.get('window').width;
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-const BG          = '#F5F0E8';   // main screen background — warm cream
-const HERO_A      = '#EEE5D8';   // hero gradient start
-const HERO_B      = '#E5DACC';   // hero gradient mid
-const HERO_C      = '#D9CCBC';   // hero gradient end
-const CARD        = '#EBE4DA';   // default card
-const CARD_ALT    = '#E6DED3';   // slightly deeper card
-const CARD_DARK   = '#DDD5C8';   // darkest card used in customize
-const WHITE_GLASS = 'rgba(255,255,255,0.54)';
+const BG = '#F6F2EC';
+const PAPER = '#F8F4EE';
+const PAPER_SOFT = '#F4EEE6';
+const CARD = '#F1E9DF';
+const CARD_DARK = '#E8DDD0';
+const WHITE_GLASS = 'rgba(255,255,255,0.74)';
+const TEXT = '#2E2723';
+const TEXT_SOFT = '#8F8376';
+const TEXT_MUTED = '#A59788';
+const ACCENT = '#C7AA87';
+const ACCENT_DARK = '#B6946F';
+const BORDER = 'rgba(126, 105, 82, 0.08)';
+const SHADOW = 'rgba(98, 76, 53, 0.12)';
 
-const INK         = '#231C17';   // deep warm near-black
-const INK_MED     = '#6A5C52';   // medium warm
-const INK_SOFT    = '#9B8D83';   // faint warm
-const ACCENT      = '#B28D68';   // warm terracotta-gold
-const ACCENT_DEEP = '#9A7550';   // deeper accent for active states
-const RULE        = 'rgba(155,125,95,0.18)';
+type GenderValue = 'boy' | 'girl' | 'surprise';
 
-const H_PAD       = 22;
-const HERO_R      = 34;
-const CARD_R      = 28;
-
-type TimeMode = 'days' | 'weeks' | 'hours';
-const MODES: TimeMode[] = ['days', 'weeks', 'hours'];
-
-function pad(v: number) {
-  return String(Math.max(0, v)).padStart(2, '0');
+function pad(value: number) {
+  return String(Math.max(0, value)).padStart(2, '0');
 }
 
-// ─── Header ────────────────────────────────────────────────────────────────
-function Header() {
+function formatLongDate(dateLike: string | Date) {
+  const date = typeof dateLike === 'string' ? new Date(dateLike) : dateLike;
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(date);
+  } catch {
+    return date.toDateString();
+  }
+}
+
+function getRemainingParts(dueDateLike: string | Date) {
+  const dueDate = typeof dueDateLike === 'string' ? new Date(dueDateLike) : dueDateLike;
+  const diff = Math.max(0, dueDate.getTime() - Date.now());
+
+  const totalDays = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const weeks = Math.floor(totalDays / 7);
+  const days = totalDays % 7;
+  const hours = Math.floor(diff / (1000 * 60 * 60)) % 24;
+  const minutes = Math.floor(diff / (1000 * 60)) % 60;
+  const seconds = Math.floor(diff / 1000) % 60;
+
+  return {
+    diff,
+    totalDays,
+    weeks,
+    days,
+    hours,
+    minutes,
+    seconds,
+  };
+}
+
+function getProgress(startDateLike: string | Date, dueDateLike: string | Date) {
+  const start = typeof startDateLike === 'string' ? new Date(startDateLike) : startDateLike;
+  const due = typeof dueDateLike === 'string' ? new Date(dueDateLike) : dueDateLike;
+
+  const total = due.getTime() - start.getTime();
+  const elapsed = Date.now() - start.getTime();
+
+  if (total <= 0) return 0;
+  const raw = (elapsed / total) * 100;
+  return Math.min(100, Math.max(0, Math.round(raw)));
+}
+
+export default function HomeScreenEditorialV2() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-
-  return (
-    <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
-      <View style={styles.headerBrand}>
-        <View style={styles.headerHeart}>
-          <Ionicons name="heart" size={14} color={ACCENT} />
-        </View>
-        <Text style={styles.brandText}>
-          <Text style={styles.brandBold}>Mommy</Text>
-          <Text style={styles.brandLight}>Count</Text>
-        </Text>
-      </View>
-      <TouchableOpacity
-        style={styles.headerIconBtn}
-        onPress={() => router.push('/(tabs)/profile')}
-        activeOpacity={0.78}
-      >
-        <Ionicons name="settings-outline" size={18} color={INK_MED} />
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-// ─── Hero ──────────────────────────────────────────────────────────────────
-function HeroBlock({
-  weeks, days, hours, minutes, seconds,
-  countdownStarted, genderLabel,
-  onEdit, onShare, onScrollToDetails,
-}: {
-  weeks: number; days: number; hours: number;
-  minutes: number; seconds: number;
-  countdownStarted: boolean; genderLabel: string;
-  onEdit: () => void; onShare: () => void; onScrollToDetails: () => void;
-}) {
-  return (
-    <View style={styles.heroOuter}>
-      {/* Soft ambient shadow */}
-      <View style={styles.heroShadow} />
-
-      <View style={styles.heroCard}>
-        <LinearGradient
-          colors={[HERO_A, HERO_B, HERO_C, '#CEBFAE']}
-          start={{ x: 0.05, y: 0.05 }}
-          end={{ x: 0.95, y: 0.95 }}
-          style={StyleSheet.absoluteFillObject}
-        />
-
-        {/* Soft organic orbs for texture */}
-        <View style={styles.orbTopLeft} />
-        <View style={styles.orbBottomRight} />
-        <View style={styles.orbMidRight} />
-        <View style={styles.orbBottomLeft} />
-
-        {/* Top row: gender badge + edit */}
-        <View style={styles.heroTopRow}>
-          <View style={styles.genderPill}>
-            <Ionicons name="heart" size={10} color={ACCENT_DEEP} style={{ marginRight: 6 }} />
-            <Text style={styles.genderPillText}>{genderLabel}</Text>
-          </View>
-          <TouchableOpacity style={styles.heroEditBtn} onPress={onEdit} activeOpacity={0.78}>
-            <Ionicons name="pencil" size={15} color={INK_MED} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Italic headline */}
-        <Text style={styles.heroHeadline}>
-          {countdownStarted ? 'Meeting you in\u2026' : 'Ready to begin?'}
-        </Text>
-
-        {countdownStarted ? (
-          <>
-            {/* Big countdown: WEEKS · DAYS · HRS */}
-            <View style={styles.countRow}>
-              <View style={styles.countUnit}>
-                <Text style={styles.countNum}>{pad(weeks)}</Text>
-                <Text style={styles.countLabel}>WEEKS</Text>
-              </View>
-
-              <View style={styles.countSep} />
-
-              <View style={styles.countUnit}>
-                <Text style={styles.countNum}>{pad(days)}</Text>
-                <Text style={styles.countLabel}>DAYS</Text>
-              </View>
-
-              <View style={styles.countSep} />
-
-              <View style={styles.countUnit}>
-                <Text style={styles.countNum}>{pad(hours)}</Text>
-                <Text style={styles.countLabel}>HRS</Text>
-              </View>
-            </View>
-
-            {/* Subtle MM:SS ticker */}
-            <View style={styles.tickerPill}>
-              <Text style={styles.tickerNum}>{pad(minutes)}</Text>
-              <Text style={styles.tickerColon}>:</Text>
-              <Text style={styles.tickerNum}>{pad(seconds)}</Text>
-              <View style={styles.tickerLabels}>
-                <Text style={styles.tickerLabel}>MIN</Text>
-                <Text style={styles.tickerLabel}>SEC</Text>
-              </View>
-            </View>
-
-            {/* CTA */}
-            <TouchableOpacity style={styles.heroCta} onPress={onShare} activeOpacity={0.86}>
-              <Ionicons name="share-outline" size={15} color="#fff" />
-              <Text style={styles.heroCtaText}>Share our countdown</Text>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <View style={styles.heroEmptyWrap}>
-            <Text style={styles.heroEmptySub}>
-              Set your dates to begin the journey.
-            </Text>
-            <TouchableOpacity style={styles.heroCta} onPress={onScrollToDetails} activeOpacity={0.86}>
-              <Text style={styles.heroCtaText}>Start countdown</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-    </View>
-  );
-}
-
-// ─── Value / Premium line ─────────────────────────────────────────────────
-function ValueLine() {
-  return (
-    <View style={styles.valueWrap}>
-      <View style={styles.valueSep} />
-      <Text style={styles.valueText}>
-        Every moment of this journey{'\n'}is worth remembering.
-      </Text>
-      <Text style={styles.valueUpgrade}>Upgrade to Premium →</Text>
-      <View style={styles.valueSep} />
-    </View>
-  );
-}
-
-// ─── Time Remaining ────────────────────────────────────────────────────────
-function TimeRemaining({
-  countdownStarted, weekDay, timeData,
-}: {
-  countdownStarted: boolean;
-  weekDay: { weeks: number; days: number };
-  timeData: ReturnType<typeof getTimeUntilDueMs>;
-}) {
-  const [mode, setMode] = useState<TimeMode>('days');
-
-  useEffect(() => {
-    loadJSON<TimeMode>('v2_time_mode').then((s) => {
-      if (s && MODES.includes(s)) setMode(s);
-    });
-  }, []);
-
-  const cycle = useCallback(() => {
-    const next = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
-    saveJSON('v2_time_mode', next);
-    setMode(next);
-  }, [mode]);
-
-  const displayValue =
-    mode === 'days'  ? timeData.days :
-    mode === 'weeks' ? weekDay.weeks :
-    timeData.days * 24 + timeData.hours;
-
-  const displayUnit =
-    mode === 'days'  ? 'days' :
-    mode === 'weeks' ? 'weeks' : 'hours';
-
-  const nextMode = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
-
-  return (
-    <View style={styles.block}>
-      <View style={styles.blockTitleRow}>
-        <Text style={styles.eyebrow}>Time remaining</Text>
-        {countdownStarted && (
-          <TouchableOpacity onPress={cycle} activeOpacity={0.78} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Text style={styles.modeLink}>→ {nextMode}</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-      <View style={styles.timeRow}>
-        <Text style={styles.timeNum}>
-          {countdownStarted ? String(displayValue) : '—'}
-        </Text>
-        {countdownStarted && (
-          <Text style={styles.timeUnit}>{displayUnit}</Text>
-        )}
-      </View>
-    </View>
-  );
-}
-
-// ─── Journey Progress ─────────────────────────────────────────────────────
-function JourneyProgress({
-  percent, startLabel, dueLabel,
-}: {
-  percent: number; startLabel: string; dueLabel: string;
-}) {
-  const safePct = Math.min(Math.max(0, percent), 100);
-
-  return (
-    <View style={styles.block}>
-      <View style={styles.softCard}>
-        {/* Header row */}
-        <View style={styles.progressTitleRow}>
-          <Text style={styles.eyebrow}>Journey progress</Text>
-          <Text style={styles.progressPct}>{safePct}%</Text>
-        </View>
-
-        {/* Date endpoints */}
-        <View style={styles.progressDates}>
-          <Text style={styles.progressDate}>{startLabel}</Text>
-          <Text style={styles.progressDate}>{dueLabel}</Text>
-        </View>
-
-        {/* Track */}
-        <View style={styles.progressTrack}>
-          <LinearGradient
-            colors={[ACCENT, ACCENT_DEEP]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={[styles.progressFill, { width: `${safePct}%` as any }]}
-          />
-        </View>
-
-        {/* Endpoint dots */}
-        <View style={styles.progressDotRow}>
-          <View style={[styles.progressDot, { backgroundColor: ACCENT }]} />
-          <View style={[styles.progressDot, { backgroundColor: RULE }]} />
-        </View>
-      </View>
-    </View>
-  );
-}
-
-// ─── Pregnancy Section ────────────────────────────────────────────────────
-function PregnancySection({
-  startDate, dueDate, countdownStarted, onStartCountdown,
-}: {
-  startDate: string; dueDate: string;
-  countdownStarted: boolean; onStartCountdown: () => void;
-}) {
-  const router = useRouter();
-
-  return (
-    <View style={styles.block}>
-      <Text style={[styles.eyebrow, { marginBottom: 14 }]}>Your pregnancy</Text>
-      <View style={styles.cardAlt}>
-        {/* Start date row */}
-        <TouchableOpacity
-          style={styles.dateRow}
-          onPress={() => router.push('/(tabs)/profile')}
-          activeOpacity={0.78}
-        >
-          <View>
-            <Text style={styles.dateRowLabel}>Start date</Text>
-            <Text style={styles.dateRowValue}>{formatDateShort(startDate)}</Text>
-          </View>
-          <Ionicons name="calendar-outline" size={22} color={ACCENT} />
-        </TouchableOpacity>
-
-        <View style={styles.cardRule} />
-
-        {/* Due date row */}
-        <TouchableOpacity
-          style={styles.dateRow}
-          onPress={() => router.push('/(tabs)/profile')}
-          activeOpacity={0.78}
-        >
-          <View>
-            <Text style={styles.dateRowLabel}>Due date</Text>
-            <Text style={styles.dateRowValue}>{formatDateShort(dueDate)}</Text>
-          </View>
-          <Ionicons name="calendar" size={22} color={ACCENT} />
-        </TouchableOpacity>
-
-        {!countdownStarted && (
-          <TouchableOpacity
-            style={styles.secondaryCta}
-            onPress={onStartCountdown}
-            activeOpacity={0.86}
-          >
-            <Text style={styles.secondaryCtaText}>Start countdown</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </View>
-  );
-}
-
-// ─── Gender Section ───────────────────────────────────────────────────────
-const GENDERS = [
-  { key: 'boy'      as const, label: 'Boy',      icon: 'male-outline'   as const },
-  { key: 'girl'     as const, label: 'Girl',     icon: 'female-outline' as const },
-  { key: 'surprise' as const, label: 'Surprise', icon: 'gift-outline'   as const },
-] as const;
-
-function GenderSection({
-  selected, onSelect,
-}: {
-  selected: 'boy' | 'girl' | 'surprise';
-  onSelect: (g: 'boy' | 'girl' | 'surprise') => void;
-}) {
-  return (
-    <View style={styles.block}>
-      <Text style={[styles.eyebrow, { marginBottom: 14 }]}>It's a…</Text>
-      <View style={styles.genderRow}>
-        {GENDERS.map((item) => {
-          const active = item.key === selected;
-          return (
-            <TouchableOpacity
-              key={item.key}
-              style={[styles.genderCard, active && styles.genderCardActive]}
-              onPress={() => onSelect(item.key)}
-              activeOpacity={0.78}
-            >
-              <Ionicons
-                name={item.icon}
-                size={26}
-                color={active ? ACCENT_DEEP : INK_SOFT}
-                style={{ marginBottom: 10 }}
-              />
-              <Text style={[styles.genderCardLabel, active && styles.genderCardLabelActive]}>
-                {item.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
-// ─── Customize Section ────────────────────────────────────────────────────
-function CustomizeSection() {
-  const router = useRouter();
-
-  return (
-    <View style={styles.customizeOuter}>
-      <LinearGradient
-        colors={[CARD_ALT, CARD_DARK, '#CFC3B3']}
-        start={{ x: 0.05, y: 0.05 }}
-        end={{ x: 0.95, y: 0.95 }}
-        style={styles.customizeGrad}
-      >
-        {/* Decorative orb */}
-        <View style={styles.customizeOrb} />
-
-        <Text style={styles.customizeEyebrow}>CUSTOMIZE</Text>
-        <Text style={styles.customizeHeadline}>
-          Make it{'\n'}truly yours.
-        </Text>
-        <Text style={styles.customizeBody}>
-          Personalize with fonts, colors, and photos — create a countdown as unique as your story.
-        </Text>
-        <TouchableOpacity
-          style={styles.customizeCta}
-          onPress={() => router.push('/(tabs)/design')}
-          activeOpacity={0.86}
-        >
-          <Ionicons name="pencil-outline" size={15} color="#fff" />
-          <Text style={styles.customizeCtaText}>Customize design</Text>
-        </TouchableOpacity>
-      </LinearGradient>
-    </View>
-  );
-}
-
-// ─── Root ─────────────────────────────────────────────────────────────────
-export default function HomeScreenEditorialV2() {
   const { profile, updateProfile } = useProfile();
-  const router = useRouter();
-  const scrollRef = useRef<ScrollView>(null);
 
-  const dueDate   = profile?.dueDate   ?? new Date(Date.now() + 90 * 86400000).toISOString();
-  const startDate = profile?.startDate ?? new Date(Date.now() - 30 * 86400000).toISOString();
+  const dueDate = useMemo(() => {
+    if (profile?.dueDate) return profile.dueDate;
+    const fallback = new Date();
+    fallback.setDate(fallback.getDate() + 20);
+    return fallback.toISOString();
+  }, [profile?.dueDate]);
 
-  const countdownStarted = profile?.countdownStarted === true;
-  const gender = (profile?.gender as 'boy' | 'girl' | 'surprise') ?? 'surprise';
+  const startDate = useMemo(() => {
+    if (profile?.startDate) return profile.startDate;
+    const fallback = new Date();
+    fallback.setDate(fallback.getDate() - 260);
+    return fallback.toISOString();
+  }, [profile?.startDate]);
 
-  const weekDay = useMemo(() => getWeeksAndDays(dueDate), [dueDate]);
-  const [time, setTime] = useState(() => getTimeUntilDueMs(dueDate));
-  const percent = useMemo(() => getJourneyProgress(startDate, dueDate), [startDate, dueDate]);
+  const gender = (profile?.gender as GenderValue) || 'boy';
+
+  const [time, setTime] = useState(() => getRemainingParts(dueDate));
 
   useEffect(() => {
-    if (!countdownStarted) return;
-    const id = setInterval(() => setTime(getTimeUntilDueMs(dueDate)), 1000);
-    return () => clearInterval(id);
-  }, [countdownStarted, dueDate]);
+    const timer = setInterval(() => {
+      setTime(getRemainingParts(dueDate));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [dueDate]);
+
+  const progress = useMemo(() => getProgress(startDate, dueDate), [startDate, dueDate]);
+
+  const genderLabel =
+    gender === 'boy' ? "IT'S A BOY" : gender === 'girl' ? "IT'S A GIRL" : "IT'S A SURPRISE";
 
   const handleShare = useCallback(() => {
     Share.share({
-      message: `${weekDay.weeks} weeks and ${weekDay.days} days until we meet our little one \u{1F49B}`,
+      message: `Meeting you in ${time.weeks} weeks, ${time.days} days and ${time.hours} hours.`,
     });
-  }, [weekDay]);
+  }, [time.weeks, time.days, time.hours]);
 
-  const scrollToDetails = useCallback(() => {
-    scrollRef.current?.scrollTo({ y: 780, animated: true });
-  }, []);
-
-  const handleStartCountdown = useCallback(() => {
-    updateProfile?.({ countdownStarted: true });
-  }, [updateProfile]);
-
-  const genderLabel =
-    gender === 'boy'  ? "IT'S A BOY" :
-    gender === 'girl' ? "IT'S A GIRL" : "IT'S A SURPRISE";
+  const setGender = useCallback(
+    (value: GenderValue) => {
+      updateProfile?.({ gender: value });
+    },
+    [updateProfile]
+  );
 
   return (
     <View style={styles.screen}>
-      <Header />
+      <LinearGradient
+        colors={['#FBF8F3', '#F5F0E9', '#F4EFE8']}
+        style={StyleSheet.absoluteFillObject}
+      />
+
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <View style={styles.brandWrap}>
+          <View style={styles.brandIcon}>
+            <Ionicons name="heart" size={18} color={ACCENT_DARK} />
+          </View>
+          <Text style={styles.brandText}>
+            <Text style={styles.brandTextBold}>Mommy</Text>
+            <Text style={styles.brandTextLight}>Count</Text>
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          activeOpacity={0.82}
+          style={styles.headerAction}
+          onPress={() => router.push('/(tabs)/profile')}
+        >
+          <Ionicons name="settings-outline" size={22} color={TEXT_MUTED} />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
-        ref={scrollRef}
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: Math.max(120, insets.bottom + 88) },
+        ]}
       >
-        {/* 1. Hero Countdown */}
-        <HeroBlock
-          weeks={weekDay.weeks}
-          days={weekDay.days}
-          hours={time.hours}
-          minutes={time.minutes}
-          seconds={time.seconds}
-          countdownStarted={countdownStarted}
-          genderLabel={genderLabel}
-          onEdit={() => router.push('/(tabs)/design')}
-          onShare={handleShare}
-          onScrollToDetails={scrollToDetails}
-        />
+        <View style={styles.heroShadow} />
 
-        {/* 2. Value / Premium line under hero */}
-        <ValueLine />
+        <View style={styles.hero}>
+          <LinearGradient
+            colors={['#EFE5D9', '#E8DBCC', '#E6D9CB']}
+            start={{ x: 0.05, y: 0.02 }}
+            end={{ x: 0.95, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
 
-        {/* 3. Time Remaining */}
-        <TimeRemaining
-          countdownStarted={countdownStarted}
-          weekDay={weekDay}
-          timeData={time}
-        />
+          <View style={styles.heroTextureA} />
+          <View style={styles.heroTextureB} />
+          <View style={styles.heroTextureC} />
+          <View style={styles.heroTextureD} />
+          <View style={styles.heroTextureE} />
+          <View style={styles.heroSoftWash} />
 
-        {/* 4. Journey Progress */}
-        <JourneyProgress
-          percent={countdownStarted ? percent : 0}
-          startLabel={formatDateLabel(startDate)}
-          dueLabel={formatDateLabel(dueDate)}
-        />
+          <View style={styles.heroTopRow}>
+            <View style={styles.heroBadge}>
+              <Ionicons name="heart" size={15} color={ACCENT_DARK} />
+              <Text style={styles.heroBadgeText}>{genderLabel}</Text>
+            </View>
 
-        {/* 5. Your Pregnancy */}
-        <PregnancySection
-          startDate={startDate}
-          dueDate={dueDate}
-          countdownStarted={countdownStarted}
-          onStartCountdown={handleStartCountdown}
-        />
+            <TouchableOpacity
+              activeOpacity={0.86}
+              style={styles.heroEdit}
+              onPress={() => router.push('/(tabs)/design')}
+            >
+              <Ionicons name="pencil" size={18} color={TEXT_SOFT} />
+            </TouchableOpacity>
+          </View>
 
-        {/* 6. Gender Selection */}
-        <GenderSection
-          selected={gender}
-          onSelect={(g) => updateProfile?.({ gender: g })}
-        />
+          <Text style={styles.heroTitle}>Meeting you in...</Text>
 
-        {/* 7. Customize Design */}
-        <CustomizeSection />
+          <View style={styles.countdownRow}>
+            <View style={styles.countItem}>
+              <Text style={styles.countValue}>{pad(time.weeks)}</Text>
+              <Text style={styles.countLabel}>WEEKS</Text>
+            </View>
+
+            <View style={styles.countDivider} />
+
+            <View style={styles.countItem}>
+              <Text style={styles.countValue}>{pad(time.days)}</Text>
+              <Text style={styles.countLabel}>DAYS</Text>
+            </View>
+
+            <View style={styles.countDivider} />
+
+            <View style={styles.countItem}>
+              <Text style={styles.countValue}>{pad(time.hours)}</Text>
+              <Text style={styles.countLabel}>HOURS</Text>
+            </View>
+          </View>
+
+          <View style={styles.timerPill}>
+            <LinearGradient
+              colors={['rgba(255,255,255,0.86)', 'rgba(249,245,239,0.68)']}
+              style={StyleSheet.absoluteFillObject}
+            />
+            <Text style={styles.timerValue}>
+              {pad(time.minutes)}:{pad(time.seconds)}
+            </Text>
+            <View style={styles.timerMeta}>
+              <Text style={styles.timerMetaText}>MIN</Text>
+              <Text style={styles.timerMetaText}>SEC</Text>
+            </View>
+          </View>
+
+          <View style={styles.heroFooterBand}>
+            <TouchableOpacity activeOpacity={0.9} style={styles.shareBtn} onPress={handleShare}>
+              <LinearGradient
+                colors={[ACCENT, '#D1B18D', ACCENT]}
+                start={{ x: 0.05, y: 0 }}
+                end={{ x: 0.95, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              />
+              <Ionicons name="share-outline" size={18} color="#FFFDFB" />
+              <Text style={styles.shareText}>Share our countdown</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.valueTextWrap}>
+          <Text style={styles.valueTextLineOne}>Keep memories as beautiful as your journey.</Text>
+          <Text style={styles.valueTextLineTwo}>Upgrade for more.</Text>
+        </View>
+
+        <View style={styles.sectionBlock}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>Time remaining</Text>
+            <View style={styles.sectionHairline} />
+          </View>
+          <Text style={styles.sectionHint}>Tap for weeks</Text>
+
+          <View style={styles.progressCard}>
+            <LinearGradient
+              colors={['rgba(255,255,255,0.76)', 'rgba(247,242,234,0.58)']}
+              style={StyleSheet.absoluteFillObject}
+            />
+            <View style={styles.progressTextureOne} />
+            <View style={styles.progressTextureTwo} />
+
+            <View style={styles.progressTopRow}>
+              <Text style={styles.progressDateTop}>Start {formatLongDate(startDate)}</Text>
+              <Text style={styles.progressPercent}>{progress}%</Text>
+            </View>
+
+            <View style={styles.progressTrack}>
+              <LinearGradient
+                colors={[ACCENT_DARK, ACCENT, '#D9B896']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.progressFill, { width: `${progress}%` as any }]}
+              />
+            </View>
+
+            <Text style={styles.progressDateBottom}>Due {formatLongDate(dueDate)}</Text>
+          </View>
+        </View>
+
+        <View style={styles.sectionBlock}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>Your pregnancy</Text>
+            <View style={styles.sectionHairline} />
+          </View>
+
+          <View style={styles.genderRow}>
+            {[
+              { key: 'boy' as GenderValue, label: 'Boy', icon: 'male-outline' },
+              { key: 'girl' as GenderValue, label: 'Girl', icon: 'female-outline' },
+              { key: 'surprise' as GenderValue, label: 'Surprise', icon: 'gift-outline' },
+            ].map((item) => {
+              const selected = gender === item.key;
+
+              return (
+                <TouchableOpacity
+                  key={item.key}
+                  activeOpacity={0.86}
+                  style={[styles.genderCard, selected && styles.genderCardSelected]}
+                  onPress={() => setGender(item.key)}
+                >
+                  <LinearGradient
+                    colors={
+                      selected
+                        ? ['rgba(255,255,255,0.86)', 'rgba(250,247,243,0.76)']
+                        : ['rgba(255,255,255,0.36)', 'rgba(247,242,234,0.18)']
+                    }
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  <Ionicons
+                    name={item.icon as any}
+                    size={42}
+                    color={selected ? ACCENT_DARK : TEXT_MUTED}
+                  />
+                  <Text style={[styles.genderLabel, selected && styles.genderLabelSelected]}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <View style={styles.customizeCard}>
+            <LinearGradient
+              colors={['rgba(255,255,255,0.76)', 'rgba(245,238,228,0.66)']}
+              style={StyleSheet.absoluteFillObject}
+            />
+            <View style={styles.customizeTextureA} />
+            <View style={styles.customizeTextureB} />
+
+            <Text style={styles.customizeTitle}>Make it truly yours</Text>
+            <Text style={styles.customizeBody}>
+              Personalize your countdown with fonts, colors, and photos
+            </Text>
+
+            <TouchableOpacity
+              activeOpacity={0.88}
+              style={styles.customizeButton}
+              onPress={() => router.push('/(tabs)/design')}
+            >
+              <LinearGradient
+                colors={[ACCENT_DARK, ACCENT, '#D2B08A']}
+                start={{ x: 0.05, y: 0 }}
+                end={{ x: 0.95, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              />
+              <Ionicons name="pencil" size={18} color="#FFFDFB" />
+              <Text style={styles.customizeButtonText}>Customize design</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </ScrollView>
     </View>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────
+const H_PAD = 24;
+const HERO_WIDTH = SCREEN_WIDTH - H_PAD * 2;
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: BG,
   },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    paddingBottom: 36,
-  },
 
-  // ── Header ──
   header: {
     paddingHorizontal: H_PAD,
-    paddingBottom: 16,
+    paddingBottom: 18,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: BG,
   },
-  headerBrand: {
+
+  brandWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  brandIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: 'rgba(245,239,231,0.98)',
+    borderWidth: 1,
+    borderColor: BORDER,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+
+  brandText: {
+    fontSize: 30,
+    letterSpacing: -0.7,
+  },
+
+  brandTextBold: {
+    color: TEXT,
+    fontWeight: '700',
+  },
+
+  brandTextLight: {
+    color: TEXT_MUTED,
+    fontWeight: '300',
+  },
+
+  headerAction: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: 'rgba(245,239,231,0.98)',
+    borderWidth: 1,
+    borderColor: BORDER,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  content: {
+    paddingHorizontal: H_PAD,
+    paddingTop: 8,
+  },
+
+  heroShadow: {
+    position: 'absolute',
+    top: 36,
+    left: H_PAD + 14,
+    right: H_PAD + 14,
+    height: 930,
+    borderRadius: 44,
+    backgroundColor: SHADOW,
+    opacity: 0.12,
+    shadowColor: '#7F6448',
+    shadowOffset: { width: 0, height: 28 },
+    shadowOpacity: 0.08,
+    shadowRadius: 44,
+    elevation: 14,
+  },
+
+  hero: {
+    width: HERO_WIDTH,
+    borderRadius: 38,
+    overflow: 'hidden',
+    backgroundColor: CARD,
+    borderWidth: 1,
+    borderColor: 'rgba(131,108,84,0.04)',
+    marginBottom: 18,
+  },
+
+  heroTextureA: {
+    position: 'absolute',
+    top: -28,
+    left: -46,
+    width: 310,
+    height: 250,
+    borderRadius: 160,
+    backgroundColor: 'rgba(255,255,255,0.26)',
+  },
+
+  heroTextureB: {
+    position: 'absolute',
+    top: 112,
+    right: -56,
+    width: 360,
+    height: 250,
+    borderRadius: 180,
+    backgroundColor: 'rgba(233,221,206,0.28)',
+  },
+
+  heroTextureC: {
+    position: 'absolute',
+    bottom: 94,
+    right: 18,
+    width: 230,
+    height: 230,
+    borderRadius: 115,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+
+  heroTextureD: {
+    position: 'absolute',
+    left: -22,
+    bottom: 108,
+    width: 260,
+    height: 120,
+    borderRadius: 70,
+    backgroundColor: 'rgba(249,245,239,0.16)',
+  },
+
+  heroTextureE: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 320,
+    height: 70,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+
+  heroSoftWash: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+
+  heroTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingTop: 14,
+  },
+
+  heroBadge: {
+    minHeight: 50,
+    borderRadius: 25,
+    paddingHorizontal: 18,
+    backgroundColor: WHITE_GLASS,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.34)',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-  },
-  headerHeart: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: CARD,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandText: {
-    fontSize: 21,
-    letterSpacing: -0.3,
-  },
-  brandBold: {
-    color: INK,
-    fontWeight: '700',
-  },
-  brandLight: {
-    color: INK_MED,
-    fontWeight: '300',
-  },
-  headerIconBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: CARD,
-    alignItems: 'center',
-    justifyContent: 'center',
+    shadowColor: '#91745A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
   },
 
-  // ── Hero ──
-  heroOuter: {
-    marginHorizontal: H_PAD,
-    marginTop: 6,
-    marginBottom: 40,
-  },
-  heroShadow: {
-    position: 'absolute',
-    top: 18,
-    left: 8,
-    right: 8,
-    bottom: -10,
-    borderRadius: HERO_R + 4,
-    backgroundColor: 'rgba(115,88,62,0.06)',
-    shadowColor: '#6E4E2C',
-    shadowOffset: { width: 0, height: 22 },
-    shadowOpacity: 0.09,
-    shadowRadius: 36,
-    elevation: 10,
-  },
-  heroCard: {
-    overflow: 'hidden',
-    borderRadius: HERO_R,
-    minHeight: 450,
-    paddingTop: 24,
-    paddingBottom: 30,
-    paddingHorizontal: 24,
-  },
-  orbTopLeft: {
-    position: 'absolute',
-    top: -80,
-    left: -80,
-    width: 360,
-    height: 290,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.20)',
-  },
-  orbBottomRight: {
-    position: 'absolute',
-    bottom: -50,
-    right: -70,
-    width: 280,
-    height: 220,
-    borderRadius: 999,
-    backgroundColor: 'rgba(190,168,140,0.16)',
-  },
-  orbMidRight: {
-    position: 'absolute',
-    right: -30,
-    top: 120,
-    width: 180,
-    height: 150,
-    borderRadius: 999,
-    backgroundColor: 'rgba(208,188,162,0.13)',
-  },
-  orbBottomLeft: {
-    position: 'absolute',
-    left: -20,
-    bottom: 60,
-    width: 140,
-    height: 110,
-    borderRadius: 999,
-    backgroundColor: 'rgba(230,215,195,0.12)',
-  },
-  heroTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  genderPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 34,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-    backgroundColor: WHITE_GLASS,
-  },
-  genderPillText: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.4,
-    color: INK,
-  },
-  heroEditBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255,255,255,0.38)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroHeadline: {
-    marginTop: 24,
-    marginBottom: 26,
-    textAlign: 'center',
-    fontSize: 33,
-    lineHeight: 40,
-    fontWeight: '300',
-    fontStyle: 'italic',
-    letterSpacing: -0.6,
-    color: INK_MED,
-  },
-  countRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 22,
-  },
-  countUnit: {
-    alignItems: 'center',
-    minWidth: 88,
-  },
-  countNum: {
-    fontSize: 82,
-    lineHeight: 86,
-    fontWeight: '200',
-    letterSpacing: -3.5,
-    color: INK,
-    fontVariant: ['tabular-nums'],
-  },
-  countLabel: {
-    marginTop: 5,
-    fontSize: 9,
-    fontWeight: '700',
-    letterSpacing: 2.4,
-    color: INK_SOFT,
-  },
-  countSep: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(100,78,55,0.20)',
-    marginBottom: 26,
-    marginHorizontal: 6,
-  },
-  tickerPill: {
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 22,
-    borderRadius: 16,
-    backgroundColor: 'rgba(50,35,20,0.05)',
-    marginBottom: 26,
-    gap: 4,
-  },
-  tickerNum: {
-    fontSize: 28,
-    fontWeight: '200',
-    letterSpacing: -0.5,
-    color: INK,
-    fontVariant: ['tabular-nums'],
-  },
-  tickerColon: {
-    fontSize: 22,
-    fontWeight: '200',
-    color: INK_MED,
-    marginBottom: 4,
-  },
-  tickerLabels: {
-    marginLeft: 8,
-    gap: 6,
-  },
-  tickerLabel: {
-    fontSize: 9,
-    fontWeight: '700',
-    letterSpacing: 1.4,
-    color: INK_SOFT,
-  },
-  heroCta: {
-    height: 52,
-    borderRadius: 999,
-    backgroundColor: ACCENT,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  heroCtaText: {
-    color: '#fff',
+  heroBadgeText: {
     fontSize: 15,
+    letterSpacing: 1.1,
+    color: ACCENT_DARK,
     fontWeight: '600',
-    letterSpacing: 0.1,
-  },
-  heroEmptyWrap: {
-    paddingVertical: 36,
-    alignItems: 'center',
-    gap: 22,
-  },
-  heroEmptySub: {
-    fontSize: 16,
-    lineHeight: 25,
-    fontStyle: 'italic',
-    color: INK_MED,
-    textAlign: 'center',
   },
 
-  // ── Value line ──
-  valueWrap: {
-    marginHorizontal: H_PAD,
-    marginBottom: 46,
+  heroEdit: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: 'rgba(255,255,255,0.54)',
     alignItems: 'center',
-    gap: 12,
-  },
-  valueSep: {
-    width: SCREEN_W * 0.38,
-    height: 1,
-    backgroundColor: RULE,
-  },
-  valueText: {
-    fontSize: 14,
-    lineHeight: 22,
-    fontStyle: 'italic',
-    color: INK_SOFT,
-    textAlign: 'center',
-    letterSpacing: 0.05,
-  },
-  valueUpgrade: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: ACCENT,
-    letterSpacing: 0.2,
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.28)',
   },
 
-  // ── Section blocks ──
-  block: {
-    marginHorizontal: H_PAD,
-    marginBottom: 42,
+  heroTitle: {
+    marginTop: 34,
+    textAlign: 'center',
+    fontSize: 34,
+    color: '#5B4B3D',
+    fontStyle: 'italic',
+    fontWeight: '400',
   },
-  blockTitleRow: {
+
+  countdownRow: {
+    marginTop: 30,
+    paddingHorizontal: 22,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  eyebrow: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.4,
-    color: INK_SOFT,
-    textTransform: 'uppercase',
-  },
-  modeLink: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: ACCENT,
-    letterSpacing: 0.2,
   },
 
-  // ── Time Remaining ──
-  timeRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 12,
+  countItem: {
+    flex: 1,
+    alignItems: 'center',
   },
-  timeNum: {
-    fontSize: 76,
-    lineHeight: 80,
+
+  countValue: {
+    fontSize: 82,
+    lineHeight: 88,
+    letterSpacing: -4,
+    color: TEXT,
     fontWeight: '200',
-    letterSpacing: -3.5,
-    color: INK,
     fontVariant: ['tabular-nums'],
   },
-  timeUnit: {
-    fontSize: 24,
+
+  countLabel: {
+    marginTop: 10,
+    fontSize: 13,
+    letterSpacing: 2.5,
+    color: TEXT_SOFT,
+    fontWeight: '600',
+  },
+
+  countDivider: {
+    width: 1,
+    height: 120,
+    backgroundColor: 'rgba(113,92,71,0.12)',
+  },
+
+  timerPill: {
+    marginTop: 28,
+    alignSelf: 'center',
+    width: HERO_WIDTH - 118,
+    minHeight: 98,
+    borderRadius: 34,
+    backgroundColor: 'rgba(255,255,255,0.50)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.26)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 28,
+    overflow: 'hidden',
+  },
+
+  timerValue: {
+    fontSize: 42,
+    lineHeight: 46,
+    color: TEXT,
     fontWeight: '300',
-    color: INK_MED,
+    letterSpacing: 0.4,
+    fontVariant: ['tabular-nums'],
+  },
+
+  timerMeta: {
+    marginLeft: 18,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+
+  timerMetaText: {
+    fontSize: 15,
+    color: TEXT_SOFT,
+    letterSpacing: 2.1,
+    marginVertical: 2,
+  },
+
+  heroFooterBand: {
+    marginTop: 30,
+    backgroundColor: 'rgba(249,245,239,0.34)',
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 22,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(117,95,72,0.08)',
+  },
+
+  shareBtn: {
+    minHeight: 62,
+    borderRadius: 31,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    shadowColor: '#8F7152',
+    shadowOffset: { width: 0, height: 9 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 5,
+  },
+
+  shareText: {
+    color: '#FFFDFB',
+    fontSize: 22,
+    fontWeight: '600',
     letterSpacing: -0.3,
   },
 
-  // ── Soft cards ──
-  softCard: {
-    backgroundColor: CARD,
-    borderRadius: CARD_R,
-    padding: 26,
-  },
-  cardAlt: {
-    backgroundColor: CARD_ALT,
-    borderRadius: CARD_R,
-    paddingVertical: 4,
-    paddingHorizontal: 22,
+  valueTextWrap: {
+    alignItems: 'center',
+    paddingVertical: 14,
+    marginBottom: 28,
   },
 
-  // ── Journey progress internals ──
-  progressTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  progressPct: {
+  valueTextLineOne: {
     fontSize: 18,
-    fontWeight: '300',
-    color: ACCENT,
-    letterSpacing: -0.4,
-  },
-  progressDates: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  progressDate: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: INK_MED,
-  },
-  progressTrack: {
-    height: 4,
-    borderRadius: 999,
-    backgroundColor: 'rgba(90,68,46,0.08)',
-    overflow: 'hidden',
+    color: TEXT_SOFT,
+    fontWeight: '400',
+    textAlign: 'center',
     marginBottom: 8,
   },
-  progressFill: {
-    height: 4,
-    borderRadius: 999,
-  },
-  progressDotRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  progressDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
 
-  // ── Pregnancy section internals ──
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 20,
-  },
-  dateRowLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-    color: INK_SOFT,
-    marginBottom: 6,
-  },
-  dateRowValue: {
-    fontSize: 20,
-    fontWeight: '400',
-    letterSpacing: -0.4,
-    color: INK,
-  },
-  cardRule: {
-    height: 1,
-    backgroundColor: 'rgba(115,90,65,0.08)',
-  },
-  secondaryCta: {
-    marginTop: 18,
-    marginBottom: 12,
-    height: 52,
-    borderRadius: 999,
-    backgroundColor: ACCENT,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  secondaryCtaText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-
-  // ── Gender section ──
-  genderRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  genderCard: {
-    flex: 1,
-    height: 120,
-    borderRadius: 26,
-    backgroundColor: CARD,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  genderCardActive: {
-    backgroundColor: WHITE_GLASS,
-    borderWidth: 1.5,
-    borderColor: 'rgba(160,128,95,0.28)',
-  },
-  genderCardLabel: {
-    fontSize: 13,
+  valueTextLineTwo: {
+    fontSize: 18,
+    color: TEXT_MUTED,
     fontWeight: '500',
-    color: INK_SOFT,
-  },
-  genderCardLabelActive: {
-    color: ACCENT_DEEP,
-    fontWeight: '600',
+    textAlign: 'center',
   },
 
-  // ── Customize section ──
-  customizeOuter: {
-    marginHorizontal: H_PAD,
-    marginBottom: 120,
-    borderRadius: CARD_R + 6,
-    overflow: 'hidden',
+  sectionBlock: {
+    marginBottom: 38,
   },
-  customizeGrad: {
-    padding: 32,
-    paddingBottom: 38,
-    borderRadius: CARD_R + 6,
-    overflow: 'hidden',
-    position: 'relative',
+
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  customizeOrb: {
-    position: 'absolute',
-    top: -50,
-    right: -60,
-    width: 240,
-    height: 200,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+
+  sectionTitle: {
+    fontSize: 22,
+    color: '#6F6255',
+    fontWeight: '500',
+    letterSpacing: 0.2,
   },
-  customizeEyebrow: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 2.2,
-    color: ACCENT_DEEP,
+
+  sectionHairline: {
+    height: 1,
+    flex: 1,
+    marginLeft: 12,
+    backgroundColor: 'rgba(118,100,81,0.12)',
+  },
+
+  sectionHint: {
+    fontSize: 14,
+    color: TEXT_MUTED,
     marginBottom: 14,
   },
-  customizeHeadline: {
-    fontSize: 38,
-    lineHeight: 44,
-    fontWeight: '300',
+
+  progressCard: {
+    minHeight: 150,
+    borderRadius: 28,
+    overflow: 'hidden',
+    paddingHorizontal: 22,
+    paddingVertical: 18,
+    backgroundColor: 'rgba(255,255,255,0.40)',
+    borderWidth: 1,
+    borderColor: 'rgba(121,101,81,0.08)',
+    shadowColor: '#8D6D52',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 4,
+  },
+
+  progressTextureOne: {
+    position: 'absolute',
+    right: -18,
+    bottom: -12,
+    width: 158,
+    height: 112,
+    borderRadius: 56,
+    backgroundColor: 'rgba(233,220,205,0.22)',
+  },
+
+  progressTextureTwo: {
+    position: 'absolute',
+    left: 0,
+    bottom: 0,
+    width: 200,
+    height: 58,
+    backgroundColor: 'rgba(255,255,255,0.09)',
+  },
+
+  progressTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  progressDateTop: {
+    fontSize: 23,
+    color: '#6B5C4E',
+    fontWeight: '400',
+  },
+
+  progressPercent: {
+    fontSize: 28,
+    color: '#7D6854',
+    fontWeight: '500',
+  },
+
+  progressTrack: {
+    height: 10,
+    marginTop: 14,
+    borderRadius: 8,
+    backgroundColor: 'rgba(122,101,79,0.14)',
+    overflow: 'hidden',
+  },
+
+  progressFill: {
+    height: 10,
+    borderRadius: 8,
+  },
+
+  progressDateBottom: {
+    fontSize: 23,
+    color: '#6B5C4E',
+    fontWeight: '400',
+    marginTop: 16,
+  },
+
+  genderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 22,
+  },
+
+  genderCard: {
+    width: (HERO_WIDTH - 28) / 3,
+    height: 126,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.28)',
+    borderWidth: 1,
+    borderColor: 'rgba(121,101,81,0.05)',
+    shadowColor: '#8D6D52',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.04,
+    shadowRadius: 16,
+    elevation: 2,
+    overflow: 'hidden',
+  },
+
+  genderCardSelected: {
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    borderColor: 'rgba(184,160,136,0.24)',
+  },
+
+  genderLabel: {
+    marginTop: 12,
+    fontSize: 19,
+    color: TEXT_SOFT,
+    fontWeight: '500',
+  },
+
+  genderLabelSelected: {
+    color: ACCENT_DARK,
+    fontWeight: '600',
+  },
+
+  customizeCard: {
+    minHeight: 280,
+    borderRadius: 32,
+    overflow: 'hidden',
+    paddingHorizontal: 22,
+    paddingTop: 24,
+    paddingBottom: 20,
+    backgroundColor: 'rgba(255,255,255,0.42)',
+    borderWidth: 1,
+    borderColor: 'rgba(121,101,81,0.08)',
+    shadowColor: '#8D6D52',
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 4,
+  },
+
+  customizeTextureA: {
+    position: 'absolute',
+    right: -24,
+    bottom: -22,
+    width: 180,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: 'rgba(232,219,204,0.26)',
+  },
+
+  customizeTextureB: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    width: 220,
+    height: 70,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+
+  customizeTitle: {
+    fontSize: 34,
+    lineHeight: 40,
+    color: '#5B4B3D',
     fontStyle: 'italic',
-    letterSpacing: -1.2,
-    color: INK,
-    marginBottom: 16,
+    marginBottom: 14,
   },
+
   customizeBody: {
-    fontSize: 15,
-    lineHeight: 24,
-    color: INK_MED,
+    fontSize: 19,
+    lineHeight: 31,
+    color: TEXT_SOFT,
     marginBottom: 30,
+    maxWidth: '92%',
   },
-  customizeCta: {
-    height: 52,
-    borderRadius: 999,
-    backgroundColor: ACCENT_DEEP,
+
+  customizeButton: {
+    minHeight: 62,
+    borderRadius: 31,
+    overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 12,
   },
-  customizeCtaText: {
-    color: '#fff',
-    fontSize: 15,
+
+  customizeButtonText: {
+    color: '#FFFDFB',
+    fontSize: 21,
     fontWeight: '600',
-    letterSpacing: 0.1,
+    letterSpacing: -0.2,
   },
 });
