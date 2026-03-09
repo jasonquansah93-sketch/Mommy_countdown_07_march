@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useProfile } from '../../context/ProfileContext';
 
-const { width: SW, height: SH } = Dimensions.get('window');
+const { width: SW } = Dimensions.get('window');
 const H_PAD = 20;
 const CW = SW - H_PAD * 2;
 
@@ -88,23 +88,12 @@ export default function HomeScreenEditorialV2() {
   return (
     <View style={s.screen}>
 
-      {/* ── Warm cream gradient base ── */}
+      {/* ── Warme Basis-Gradient — fixierter Screen-Hintergrund ── */}
       <LinearGradient
         colors={['#EDE8DC', '#E5DDD0', '#D9CEBC', '#D0C3AC']}
         start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }}
         style={StyleSheet.absoluteFillObject}
       />
-
-      {/* ── Botanical background texture (visible through frosted cards) ── */}
-      {/* Upper-right cluster — dominant in mockup */}
-      <Blob style={{ top: -50, right: -65, width: 330, height: 290, borderRadius: 165, backgroundColor: 'rgba(255,252,245,0.30)', transform: [{ rotate: '12deg' }] }} />
-      <Blob style={{ top:  18, right:  20, width: 190, height: 250, borderRadius: 999,  backgroundColor: 'rgba(232,218,198,0.24)', transform: [{ rotate: '29deg' }] }} />
-      <Blob style={{ top:  75, right:  86, width:  64, height:  92, borderRadius: 999,  backgroundColor: 'rgba(255,250,240,0.22)', transform: [{ rotate: '-26deg' }] }} />
-      <Blob style={{ top:  42, right: 120, width:  38, height:  56, borderRadius: 999,  backgroundColor: 'rgba(255,255,255,0.20)', transform: [{ rotate: '44deg'  }] }} />
-      {/* Lower accents */}
-      <Blob style={{ top: SH * 0.52, right: -32, width: 210, height: 168, borderRadius: 999, backgroundColor: 'rgba(228,216,198,0.15)', transform: [{ rotate: '10deg'  }] }} />
-      <Blob style={{ top: SH * 0.67, left:  -32, width: 250, height: 126, borderRadius: 999, backgroundColor: 'rgba(240,228,210,0.14)', transform: [{ rotate: '-9deg'  }] }} />
-      <Blob style={{ top: SH * 0.83, right: -42, width: 210, height: 168, borderRadius: 999, backgroundColor: 'rgba(255,248,234,0.12)', transform: [{ rotate: '22deg'  }] }} />
 
       {/* ══ HEADER ══ */}
       <View style={[s.header, { paddingTop: insets.top + 8 }]}>
@@ -126,35 +115,41 @@ export default function HomeScreenEditorialV2() {
         </TouchableOpacity>
       </View>
 
-      {/* ══ SCROLL ══ */}
+      {/* ══ SCROLLVIEW ══ */}
       <ScrollView
         showsVerticalScrollIndicator={false}
         style={{ backgroundColor: 'transparent' }}
         contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + 108 }]}
       >
 
-        {/* ══════════════════════════════════════
-            1. HERO CARD
-            Frosted glass over botanical bg
-        ══════════════════════════════════════ */}
-        <View style={s.hero}>
-          {/* Frosted warm-white overlay */}
-          <LinearGradient
-            colors={[
-              'rgba(255,255,255,0.55)',
-              'rgba(255,252,246,0.48)',
-              'rgba(252,246,238,0.45)',
-            ]}
-            start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }}
-            style={StyleSheet.absoluteFillObject}
-          />
-          {/* Botanical hints inside hero (simulate bg showing through) */}
-          <Blob style={{ top: -36, right: -44, width: 230, height: 208, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.20)', transform: [{ rotate: '10deg' }] }} />
-          <Blob style={{ top:  44, right: -26, width: 162, height: 218, borderRadius: 999, backgroundColor: 'rgba(234,220,200,0.18)', transform: [{ rotate: '26deg' }] }} />
-          <Blob style={{ top: 178, left:  -34, width: 164, height:  94, borderRadius: 999, backgroundColor: 'rgba(248,240,224,0.16)', transform: [{ rotate: '-14deg' }] }} />
-          <Blob style={{ bottom: 38, right: -18, width: 174, height: 128, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.11)', transform: [{ rotate: '19deg' }] }} />
+        {/* ══════════════════════════════════════════════
+            BOTANISCHE TEXTUR — scrollt mit dem Content
+            position: absolute → hinter allem anderen,
+            left:0/right:0 innerhalb contentContainer = volle Bildschirmbreite
+        ══════════════════════════════════════════════ */}
+        <View style={s.botLayer} pointerEvents="none">
+          {/* Oben-rechts: dominante Blüten-Cluster (wie im Mockup) */}
+          <Blob style={{ top: -30, right: -10, width: 310, height: 295, borderRadius: 158, backgroundColor: 'rgba(255,252,244,0.34)', transform: [{ rotate: '14deg'  }] }} />
+          <Blob style={{ top:  10, right:  22, width: 172, height: 234, borderRadius: 999,  backgroundColor: 'rgba(226,212,192,0.28)', transform: [{ rotate: '30deg'  }] }} />
+          <Blob style={{ top:  55, right:  78, width:  64, height:  92, borderRadius: 999,  backgroundColor: 'rgba(255,250,240,0.24)', transform: [{ rotate: '-26deg' }] }} />
+          <Blob style={{ top:  34, right: 116, width:  38, height:  56, borderRadius: 999,  backgroundColor: 'rgba(255,255,255,0.22)', transform: [{ rotate: '44deg'  }] }} />
+          {/* Oben-links: weicher Akzent */}
+          <Blob style={{ top:  85, left:  -16, width: 155, height:  95, borderRadius: 999,  backgroundColor: 'rgba(238,226,208,0.20)', transform: [{ rotate: '-14deg' }] }} />
+          {/* Mitte — blassen Akzente, die beim Scrollen sichtbar werden */}
+          <Blob style={{ top: 430, right: -18, width: 185, height: 145, borderRadius: 999,  backgroundColor: 'rgba(226,214,196,0.14)', transform: [{ rotate: '10deg'  }] }} />
+          <Blob style={{ top: 550, left:  -20, width: 205, height: 106, borderRadius: 999,  backgroundColor: 'rgba(236,224,206,0.12)', transform: [{ rotate: '-8deg'  }] }} />
+          {/* Unten — sehr subtil */}
+          <Blob style={{ top: 900, right: -14, width: 168, height: 130, borderRadius: 999,  backgroundColor: 'rgba(226,214,196,0.10)', transform: [{ rotate: '14deg'  }] }} />
+        </View>
 
-          {/* Badge + Edit row */}
+        {/* ════════════════════════════════════════
+            1. HERO AREA
+            KEIN Card-Container — Elemente schweben
+            direkt auf der botanischen Fläche
+        ════════════════════════════════════════ */}
+        <View style={s.heroArea}>
+
+          {/* Badge + Edit-Button Row */}
           <View style={s.heroTop}>
             <View style={s.badge}>
               <Ionicons name="heart" size={11} color="#B8906A" style={{ marginRight: 6 }} />
@@ -172,7 +167,7 @@ export default function HomeScreenEditorialV2() {
           {/* Headline */}
           <Text style={s.heroTitle}>Meeting you in...</Text>
 
-          {/* Countdown */}
+          {/* Countdown — Weeks / Days / Hours */}
           <View style={s.countRow}>
             <View style={s.countCol}>
               <Text style={s.countNum}>{pad(time.weeks)}</Text>
@@ -190,10 +185,10 @@ export default function HomeScreenEditorialV2() {
             </View>
           </View>
 
-          {/* Timer pill */}
+          {/* Timer Pill — Min:Sec */}
           <View style={s.timerPill}>
             <LinearGradient
-              colors={['rgba(255,255,255,0.94)', 'rgba(252,248,242,0.90)']}
+              colors={['rgba(255,255,255,0.96)', 'rgba(252,248,244,0.94)']}
               style={StyleSheet.absoluteFillObject}
             />
             <Text style={s.timerNum}>{pad(time.minutes)}:{pad(time.seconds)}</Text>
@@ -203,7 +198,7 @@ export default function HomeScreenEditorialV2() {
             </View>
           </View>
 
-          {/* Share CTA — full pill */}
+          {/* Share CTA — volle Breite, Pill-Form */}
           <TouchableOpacity style={s.shareBtn} onPress={onShare} activeOpacity={0.88}>
             <LinearGradient
               colors={['#C09A72', '#A87E52', '#C09A72']}
@@ -215,9 +210,15 @@ export default function HomeScreenEditorialV2() {
           </TouchableOpacity>
         </View>
 
-        {/* ══════════════════════════════════════
+        {/* ════════════════════════════════════════
+            HAIRLINE — echte dünne Trennlinie,
+            subtil, kein Card-Rand
+        ════════════════════════════════════════ */}
+        <View style={s.hairline} />
+
+        {/* ════════════════════════════════════════
             2. TIME REMAINING
-        ══════════════════════════════════════ */}
+        ════════════════════════════════════════ */}
         <View style={s.sec}>
           <View style={s.secHead}>
             <Text style={s.secTitle}>Time remaining</Text>
@@ -225,14 +226,13 @@ export default function HomeScreenEditorialV2() {
           </View>
           <Text style={s.secSub}>Tap for weeks</Text>
 
-          {/* Progress card — near-white / frosted */}
+          {/* Progress Card — nah-weiß, frosted */}
           <View style={s.progCard}>
             <LinearGradient
-              colors={['rgba(255,255,255,0.92)', 'rgba(255,253,250,0.90)', 'rgba(252,248,242,0.88)']}
+              colors={['rgba(255,255,255,0.94)', 'rgba(255,253,250,0.92)', 'rgba(252,248,242,0.90)']}
               start={{ x: 0.05, y: 0 }} end={{ x: 0.95, y: 1 }}
               style={StyleSheet.absoluteFillObject}
             />
-
             <View style={s.progTop}>
               <Text style={s.progDate}>Start  {fmt(startDate)}</Text>
               <Text style={s.progPct}>{pct}%</Text>
@@ -248,9 +248,9 @@ export default function HomeScreenEditorialV2() {
           </View>
         </View>
 
-        {/* ══════════════════════════════════════
-            3. YOUR PREGNANCY — 4 tiles
-        ══════════════════════════════════════ */}
+        {/* ════════════════════════════════════════
+            3. YOUR PREGNANCY — 4 Tiles
+        ════════════════════════════════════════ */}
         <View style={s.sec}>
           <View style={s.secHead}>
             <Text style={s.secTitle}>Your pregnancy</Text>
@@ -279,7 +279,7 @@ export default function HomeScreenEditorialV2() {
                     colors={
                       sel
                         ? ['rgba(255,255,255,0.98)', 'rgba(255,254,252,0.96)']
-                        : ['rgba(255,255,255,0.60)', 'rgba(255,252,246,0.52)']
+                        : ['rgba(255,255,255,0.64)', 'rgba(255,252,246,0.56)']
                     }
                     style={StyleSheet.absoluteFillObject}
                   />
@@ -295,26 +295,24 @@ export default function HomeScreenEditorialV2() {
           </View>
         </View>
 
-        {/* ══════════════════════════════════════
+        {/* ════════════════════════════════════════
             4. MAKE IT TRULY YOURS
-        ══════════════════════════════════════ */}
+        ════════════════════════════════════════ */}
         <View style={s.custCard}>
-          {/* Near-white frosted surface */}
           <LinearGradient
-            colors={['rgba(255,255,255,0.92)', 'rgba(255,253,250,0.90)', 'rgba(252,248,242,0.88)']}
+            colors={['rgba(255,255,255,0.94)', 'rgba(255,253,250,0.92)', 'rgba(252,248,242,0.90)']}
             start={{ x: 0.05, y: 0 }} end={{ x: 0.95, y: 1 }}
             style={StyleSheet.absoluteFillObject}
           />
-          {/* Subtle botanical depth */}
-          <Blob style={{ right: -26, top:  -20, width: 180, height: 164, borderRadius: 999, backgroundColor: 'rgba(232,220,204,0.24)', transform: [{ rotate: '12deg'  }] }} />
-          <Blob style={{ left:  -16, bottom: -14, width: 218, height: 110, borderRadius: 999, backgroundColor: 'rgba(226,214,196,0.22)', transform: [{ rotate: '-9deg' }] }} />
+          {/* Subtile botanische Tiefe innerhalb der Card */}
+          <Blob style={{ right: -20, top:  -16, width: 168, height: 152, borderRadius: 999, backgroundColor: 'rgba(230,218,202,0.22)', transform: [{ rotate: '12deg'  }] }} />
+          <Blob style={{ left:  -12, bottom: -10, width: 200, height: 100, borderRadius: 999, backgroundColor: 'rgba(224,212,196,0.20)', transform: [{ rotate: '-9deg' }] }} />
 
           <Text style={s.custTitle}>Make it truly yours</Text>
           <Text style={s.custBody}>
             Personalize your countdown with fonts,{'\n'}colors, and photos
           </Text>
 
-          {/* CTA — full pill */}
           <TouchableOpacity
             style={s.custBtn}
             onPress={() => router.push('/(tabs)/design')}
@@ -335,7 +333,7 @@ export default function HomeScreenEditorialV2() {
   );
 }
 
-/* ──────────────────────────────── Styles ──────────────────────────────── */
+/* ──────────────────────────────────── Styles ──────────────────────────────────── */
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#E8DFD2' },
   ab:     { position: 'absolute' },
@@ -360,41 +358,50 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
 
-  scroll: { paddingHorizontal: H_PAD, paddingTop: 6 },
+  scroll: { paddingHorizontal: H_PAD, paddingTop: 8 },
 
-  /* ── Hero card ── */
-  hero: {
-    width: CW,
-    borderRadius: 28,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(248,244,236,0.38)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.48)',
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 22,
-    marginBottom: 20,
-    shadowColor: '#7A5E3C',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.13,
-    shadowRadius: 20,
-    elevation: 6,
+  /* ── Botanische Textur-Schicht (scrollt mit Content) ──
+     left:0 / right:0 innerhalb des contentContainers = volle Bildschirmbreite */
+  botLayer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2500,
   },
-  heroTop:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+
+  /* ════════════════════════════════════
+     HERO — KEIN sichtbarer Container
+     Kein backgroundColor, kein border,
+     kein borderRadius, kein shadow
+  ════════════════════════════════════ */
+  heroArea: {
+    paddingTop: 4,
+    paddingBottom: 30,
+  },
+  heroTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  /* Badge — weiße Pill */
   badge: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 14, paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.78)',
+    backgroundColor: 'rgba(255,255,255,0.84)',
   },
   badgeTxt: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, color: '#8B6E50' },
+
+  /* Edit-Button — weißer Kreis */
   editBtn: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.64)',
+    backgroundColor: 'rgba(255,255,255,0.75)',
     alignItems: 'center', justifyContent: 'center',
   },
 
-  /* ── Hero headline — 38 px matches mockup proportion ── */
+  /* Headline */
   heroTitle: {
     textAlign: 'center',
     fontSize: 38,
@@ -407,209 +414,137 @@ const s = StyleSheet.create({
     marginBottom: 16,
   },
 
-  /* ── Countdown ── */
+  /* Countdown-Zahlen */
   countRow: {
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'center', marginBottom: 18,
   },
   countCol: { flex: 1, alignItems: 'center' },
   countNum: {
-    fontSize: 72,
-    lineHeight: 76,
-    fontWeight: '300',
-    letterSpacing: -2,
-    color: '#2C211A',
-    fontFamily: 'Georgia',
+    fontSize: 72, lineHeight: 76,
+    fontWeight: '300', letterSpacing: -2,
+    color: '#2C211A', fontFamily: 'Georgia',
     fontVariant: ['tabular-nums'],
   },
   countLbl: {
-    marginTop: 5,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 2.2,
+    marginTop: 5, fontSize: 10,
+    fontWeight: '700', letterSpacing: 2.2,
     color: '#A08C76',
   },
   countDiv: {
-    width: 1,
-    height: 78,
-    backgroundColor: 'rgba(100,78,55,0.18)',
+    width: 1, height: 78,
+    backgroundColor: 'rgba(100,78,55,0.22)',
     marginBottom: 14,
   },
 
-  /* ── Timer pill ── */
+  /* Timer Pill — weiß, klar sichtbar auf botanischem Hintergrund */
   timerPill: {
     alignSelf: 'center',
-    width: CW - 88,
+    width: CW - 60,
     height: 68,
     borderRadius: 34,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.55)',
+    backgroundColor: 'rgba(255,255,255,0.90)',
     marginBottom: 18,
   },
   timerNum: {
-    fontSize: 34,
-    fontWeight: '300',
-    color: '#2C211A',
-    letterSpacing: 2,
+    fontSize: 34, fontWeight: '300',
+    color: '#2C211A', letterSpacing: 2,
     fontVariant: ['tabular-nums'],
   },
   timerMeta: { marginLeft: 10 },
   timerLbl: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.6,
-    color: '#A08C76',
-    lineHeight: 16,
+    fontSize: 10, fontWeight: '700',
+    letterSpacing: 1.6, color: '#A08C76', lineHeight: 16,
   },
 
-  /* ── Share button — full pill ── */
+  /* Share Button — volle Breite, Pill-Form */
   shareBtn: {
-    height: 52,
-    borderRadius: 26,
+    height: 52, borderRadius: 26,
     overflow: 'hidden',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    alignSelf: 'stretch',
   },
   shareTxt: { fontSize: 16, fontWeight: '600', color: '#FFF8EF', letterSpacing: 0.1 },
 
-  /* ── Section layout ── */
+  /* Hairline — echte dünne Trennlinie, kein Card-Rand */
+  hairline: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(120,90,60,0.24)',
+    marginBottom: 22,
+  },
+
+  /* ── Sections ── */
   sec:      { marginBottom: 22 },
   secHead:  { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  secTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#4A3A2C',
-    letterSpacing: -0.1,
-  },
-  secLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: 'rgba(100,80,60,0.14)',
-    marginLeft: 10,
-  },
-  secSub: { fontSize: 12, color: '#B0A090', marginBottom: 10, letterSpacing: 0.2 },
+  secTitle: { fontSize: 17, fontWeight: '600', color: '#4A3A2C', letterSpacing: -0.1 },
+  secLine:  { flex: 1, height: 1, backgroundColor: 'rgba(100,80,60,0.14)', marginLeft: 10 },
+  secSub:   { fontSize: 12, color: '#B0A090', marginBottom: 10, letterSpacing: 0.2 },
 
-  /* ── Progress card — near-white frosted ── */
+  /* ── Progress Card — nah-weiß, frosted ── */
   progCard: {
-    borderRadius: 18,
-    overflow: 'hidden',
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    backgroundColor: 'rgba(255,255,255,0.80)',
-    borderWidth: 0.5,
-    borderColor: 'rgba(180,155,125,0.15)',
+    borderRadius: 18, overflow: 'hidden',
+    paddingHorizontal: 18, paddingVertical: 16,
+    backgroundColor: 'rgba(255,255,255,0.82)',
+    borderWidth: 0.5, borderColor: 'rgba(180,155,125,0.15)',
     shadowColor: '#7A5E3C',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOpacity: 0.08, shadowRadius: 12, elevation: 3,
   },
   progTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-    marginBottom: 10,
+    flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'baseline', marginBottom: 10,
   },
-  progDate: {
-    fontSize: 15,
-    color: '#5A4A38',
-    fontWeight: '500',
-    letterSpacing: 0.1,
-  },
-  /* "94%" — larger, bold, left-aligned with value */
-  progPct: {
-    fontSize: 22,
-    color: '#5A4A38',
-    fontWeight: '600',
-  },
-  progTrack: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(120,95,70,0.16)',
-    overflow: 'hidden',
-  },
-  progFill: { height: 6, borderRadius: 3 },
-  /* "Due" date — left-aligned, same style as start */
-  progDateBot: {
-    fontSize: 15,
-    color: '#5A4A38',
-    fontWeight: '500',
-    letterSpacing: 0.1,
-    marginTop: 10,
-  },
+  progDate:    { fontSize: 15, color: '#5A4A38', fontWeight: '500', letterSpacing: 0.1 },
+  progPct:     { fontSize: 22, color: '#5A4A38', fontWeight: '600' },
+  progTrack:   { height: 6, borderRadius: 3, backgroundColor: 'rgba(120,95,70,0.16)', overflow: 'hidden' },
+  progFill:    { height: 6, borderRadius: 3 },
+  progDateBot: { fontSize: 15, color: '#5A4A38', fontWeight: '500', letterSpacing: 0.1, marginTop: 10 },
 
-  /* ── Pregnancy tiles ── */
+  /* ── Pregnancy Tiles ── */
   tileRow: { flexDirection: 'row', gap: 8 },
   tile: {
-    flex: 1,
-    height: 88,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    flex: 1, height: 88, borderRadius: 16,
+    alignItems: 'center', justifyContent: 'center',
     overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.42)',
-    borderWidth: 0.5,
-    borderColor: 'rgba(180,155,125,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.45)',
+    borderWidth: 0.5, borderColor: 'rgba(180,155,125,0.18)',
     shadowColor: '#7A5E3C',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.07,
-    shadowRadius: 7,
-    elevation: 2,
+    shadowOpacity: 0.07, shadowRadius: 7, elevation: 2,
   },
-  tileSel: {
-    borderColor: 'rgba(168,126,82,0.30)',
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 4,
-  },
+  tileSel:    { borderColor: 'rgba(168,126,82,0.30)', shadowOpacity: 0.12, shadowRadius: 10, elevation: 4 },
   tileLbl:    { marginTop: 6, fontSize: 11, color: '#A09080', fontWeight: '500', letterSpacing: 0.3 },
   tileLblSel: { color: '#A07A52', fontWeight: '700' },
 
-  /* ── Customize card — near-white frosted ── */
+  /* ── Customize Card — nah-weiß, frosted ── */
   custCard: {
-    borderRadius: 22,
-    overflow: 'hidden',
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 22,
-    backgroundColor: 'rgba(255,255,255,0.80)',
-    borderWidth: 0.5,
-    borderColor: 'rgba(180,155,125,0.15)',
+    borderRadius: 22, overflow: 'hidden',
+    paddingHorizontal: 20, paddingTop: 24, paddingBottom: 22,
+    backgroundColor: 'rgba(255,255,255,0.82)',
+    borderWidth: 0.5, borderColor: 'rgba(180,155,125,0.15)',
     shadowColor: '#7A5E3C',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.09,
-    shadowRadius: 16,
-    elevation: 4,
+    shadowOpacity: 0.09, shadowRadius: 16, elevation: 4,
     marginBottom: 16,
   },
   custTitle: {
-    fontSize: 28,
-    lineHeight: 34,
-    color: '#2C211A',
-    fontFamily: 'Georgia',
-    fontStyle: 'italic',
-    fontWeight: '400',
+    fontSize: 28, lineHeight: 34, color: '#2C211A',
+    fontFamily: 'Georgia', fontStyle: 'italic', fontWeight: '400',
     marginBottom: 10,
   },
   custBody: {
-    fontSize: 14,
-    lineHeight: 21,
-    color: '#7A6A58',
-    marginBottom: 20,
-    letterSpacing: 0.1,
+    fontSize: 14, lineHeight: 21, color: '#7A6A58',
+    marginBottom: 20, letterSpacing: 0.1,
   },
-  /* CTA — full pill matching share button */
+  /* CTA — volle Breite, Pill-Form */
   custBtn: {
-    height: 52,
-    borderRadius: 26,
-    overflow: 'hidden',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    height: 52, borderRadius: 26, overflow: 'hidden',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    alignSelf: 'stretch',
   },
   custBtnTxt: { fontSize: 15, fontWeight: '600', color: '#FFF8EF', letterSpacing: 0.1 },
 });
