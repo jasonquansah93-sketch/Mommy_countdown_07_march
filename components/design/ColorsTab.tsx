@@ -1,132 +1,72 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useDesign } from '../../context/DesignContext';
 import { THEMES } from '../../constants/themes';
 import type { TextColorMode } from '../../types';
 
 const TEXT_COLOR_MODES: { id: TextColorMode; label: string }[] = [
-  { id: 'auto', label: 'Auto' },
-  { id: 'light', label: 'Light' },
-  { id: 'dark', label: 'Dark' },
+  { id: 'auto',   label: 'Auto'   },
+  { id: 'light',  label: 'Light'  },
+  { id: 'dark',   label: 'Dark'   },
   { id: 'custom', label: 'Custom' },
 ];
 
-// 10 colors: neutral + theme mid-tones (matches theme families)
 const CUSTOM_TEXT_COLORS: { hex: string; label: string }[] = [
-  { hex: '#000000', label: 'Black' },
-  { hex: '#333333', label: 'Dark Gray' },
-  { hex: '#FFFFFF', label: 'White' },
-  { hex: '#E91E8C', label: 'Rose' },
-  { hex: '#7C4DFF', label: 'Lavender' },
-  { hex: '#0298D1', label: 'Ocean' },
-  { hex: '#66BB6A', label: 'Sage' },
-  { hex: '#FF9800', label: 'Sunset' },
-  { hex: '#C4A77D', label: 'Beige' },
+  { hex: '#000000', label: 'Black'        },
+  { hex: '#333333', label: 'Dark Gray'    },
+  { hex: '#FFFFFF', label: 'White'        },
+  { hex: '#E91E8C', label: 'Rose'         },
+  { hex: '#7C4DFF', label: 'Lavender'     },
+  { hex: '#0298D1', label: 'Ocean'        },
+  { hex: '#66BB6A', label: 'Sage'         },
+  { hex: '#FF9800', label: 'Sunset'       },
+  { hex: '#C4A77D', label: 'Beige'        },
   { hex: '#D4CFC8', label: 'Soft Neutral' },
 ];
 
-function isLightSwatch(hex: string): boolean {
-  const h = hex.toLowerCase();
-  return (
-    h === '#ffffff' ||
-    h === '#f5f5f5' ||
-    h === '#e0e0e0' ||
-    h === '#999999' ||
-    h === '#d4cfc8'
-  );
+function isLightSwatch(hex: string) {
+  return ['#ffffff','#f5f5f5','#e0e0e0','#999999','#d4cfc8'].includes(hex.toLowerCase());
 }
 
 const PRESET_THEME_IDS = ['boy', 'girl', 'surprise', 'basic'];
-const COLOR_THEME_IDS = ['rose', 'lavender', 'ocean', 'sage', 'sunset'];
+const COLOR_THEME_IDS  = ['rose', 'lavender', 'ocean', 'sage', 'sunset'];
 
-// Color shades for each palette - represents the COLOR RANGE within each theme
 const COLOR_SHADES: Record<string, string[]> = {
-  rose: ['#FFB6D9', '#FF8BBF', '#E91E8C', '#C91A76', '#A01560', '#FF6FB7', '#FF9FCC'],
-  lavender: ['#D1C4E9', '#B388FF', '#9575CD', '#7C4DFF', '#651FFF', '#536DFE', '#7E57C2'],
-  ocean: ['#B3E5FC', '#81D4FA', '#4FC3F7', '#29B6F6', '#0288D1', '#039BE5', '#03A9F4'],
-  sage: ['#C8E6C9', '#A5D6A7', '#81C784', '#66BB6A', '#4CAF50', '#388E3C', '#2E7D32'],
-  sunset: ['#FFE0B2', '#FFCC80', '#FFB74D', '#FFA726', '#FF9800', '#FF6D00', '#F57C00'],
-  boy: ['#BBDEFB', '#90CAF9', '#64B5F6', '#42A5F5', '#2196F3', '#1E88E5', '#1976D2'],
-  girl: ['#F8BBD9', '#F48FB1', '#F06292', '#EC407A', '#E91E63', '#D81B60', '#C2185B'],
-  surprise: ['#E6D2B8', '#D4BC96', '#C4A77D', '#B8956A', '#A67C52', '#8B7355', '#6B5344'],
-  basic: ['#FFB6D9', '#FF8BBF', '#E91E8C', '#C91A76', '#A01560', '#FF6FB7', '#FF9FCC'],
+  rose:     ['#FFB6D9','#FF8BBF','#E91E8C','#C91A76','#A01560','#FF6FB7','#FF9FCC'],
+  lavender: ['#D1C4E9','#B388FF','#9575CD','#7C4DFF','#651FFF','#536DFE','#7E57C2'],
+  ocean:    ['#B3E5FC','#81D4FA','#4FC3F7','#29B6F6','#0288D1','#039BE5','#03A9F4'],
+  sage:     ['#C8E6C9','#A5D6A7','#81C784','#66BB6A','#4CAF50','#388E3C','#2E7D32'],
+  sunset:   ['#FFE0B2','#FFCC80','#FFB74D','#FFA726','#FF9800','#FF6D00','#F57C00'],
+  boy:      ['#BBDEFB','#90CAF9','#64B5F6','#42A5F5','#2196F3','#1E88E5','#1976D2'],
+  girl:     ['#F8BBD9','#F48FB1','#F06292','#EC407A','#E91E63','#D81B60','#C2185B'],
+  surprise: ['#E6D2B8','#D4BC96','#C4A77D','#B8956A','#A67C52','#8B7355','#6B5344'],
+  basic:    ['#FFB6D9','#FF8BBF','#E91E8C','#C91A76','#A01560','#FF6FB7','#FF9FCC'],
 };
 
 interface ShadePickerProps {
-  visible: boolean;
-  themeName: string;
-  shades: string[];
-  currentColor: string;
-  onSelect: (color: string) => void;
-  onClose: () => void;
+  visible: boolean; themeName: string; shades: string[];
+  currentColor: string; onSelect: (c: string) => void; onClose: () => void;
 }
-
-function TextColorSwatch({
-  hex,
-  isSelected,
-  onPress,
-}: {
-  hex: string;
-  isSelected: boolean;
-  onPress: () => void;
-}) {
-  const needsDarkCheck = isLightSwatch(hex);
-  return (
-    <TouchableOpacity
-      style={[
-        styles.textColorSwatch,
-        { backgroundColor: hex },
-        isSelected && styles.textColorSwatchSelected,
-        isLightSwatch(hex) && styles.textColorSwatchLightBorder,
-      ]}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      {isSelected && (
-        <Ionicons
-          name="checkmark"
-          size={18}
-          color={needsDarkCheck ? '#1a1a1a' : '#FFFFFF'}
-        />
-      )}
-    </TouchableOpacity>
-  );
-}
-
 function ShadePicker({ visible, themeName, shades, currentColor, onSelect, onClose }: ShadePickerProps) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={onClose}>
-        <View style={styles.shadeModal}>
-          <Text style={styles.shadeTitle}>Select a {themeName} shade</Text>
-          <Text style={styles.shadeSubtitle}>Tap to apply to your countdown</Text>
-          <View style={styles.shadeRow}>
-            {shades.map((shade, index) => {
-              const isSelected = shade.toLowerCase() === currentColor.toLowerCase();
+      <TouchableOpacity style={s.overlay} activeOpacity={1} onPress={onClose}>
+        <View style={s.shadeModal}>
+          <Text style={s.shadeTitle}>Select a {themeName} shade</Text>
+          <Text style={s.shadeHint}>Tap to apply to your countdown</Text>
+          <View style={s.shadeRow}>
+            {shades.map((shade, i) => {
+              const sel = shade.toLowerCase() === currentColor.toLowerCase();
               return (
                 <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.shadeSwatch,
-                    { backgroundColor: shade },
-                    isSelected && styles.shadeSwatchSelected,
-                  ]}
-                  onPress={() => {
-                    onSelect(shade);
-                    onClose();
-                  }}
+                  key={i}
+                  style={[s.shadeSwatch, { backgroundColor: shade }, sel && s.shadeSwatchSel]}
+                  onPress={() => { onSelect(shade); onClose(); }}
                   activeOpacity={0.7}
                 >
-                  {isSelected && (
-                    <Ionicons name="checkmark" size={20} color="#FFFFFF" />
-                  )}
+                  {sel && <Ionicons name="checkmark" size={20} color="#FFF" />}
                 </TouchableOpacity>
               );
             })}
@@ -138,332 +78,232 @@ function ShadePicker({ visible, themeName, shades, currentColor, onSelect, onClo
 }
 
 export default function ColorsTab() {
-  const { design, setTheme, setCustomColor, setTextColorMode, setCustomTextColor, colors } = useDesign();
-  const [shadePickerVisible, setShadePickerVisible] = useState(false);
-  const [selectedTheme, setSelectedTheme] = useState<typeof THEMES[0] | null>(null);
-  const [textColorExpanded, setTextColorExpanded] = useState(false);
+  const { design, setTheme, setCustomColor, setTextColorMode, setCustomTextColor } = useDesign();
+  const [shadeVisible, setShadeVisible]       = useState(false);
+  const [selectedTheme, setSelectedTheme]     = useState<typeof THEMES[0] | null>(null);
+  const [textExpanded, setTextExpanded]        = useState(false);
 
   const handleThemePress = (theme: typeof THEMES[0]) => {
-    if (design.themeId === theme.id) {
-      setSelectedTheme(theme);
-      setShadePickerVisible(true);
-    } else {
-      setTheme(theme.id);
-    }
-  };
-
-  const handleShadeSelect = (color: string) => {
-    setCustomColor('primary', color);
+    if (design.themeId === theme.id) { setSelectedTheme(theme); setShadeVisible(true); }
+    else setTheme(theme.id);
   };
 
   const currentTextMode = design.textColorMode ?? 'auto';
-  const handleTextColorModePress = (mode: TextColorMode) => {
-    if (mode === 'custom') {
-      setTextColorMode('custom');
-      setTextColorExpanded(true);
-    } else {
-      setTextColorMode(mode);
-    }
-  };
 
-  const handleCustomTextColorSelect = (hex: string) => {
-    setCustomTextColor(hex);
-  };
+  const presetThemes = THEMES.filter(t => PRESET_THEME_IDS.includes(t.id));
+  const colorThemes  = THEMES.filter(t => COLOR_THEME_IDS.includes(t.id));
 
-  const presetThemes = THEMES.filter((t) => PRESET_THEME_IDS.includes(t.id));
-  const colorThemes = THEMES.filter((t) => COLOR_THEME_IDS.includes(t.id));
-
-  const renderThemeCard = (theme: (typeof THEMES)[0]) => {
-    const isSelected = design.themeId === theme.id;
-    const shades = COLOR_SHADES[theme.id] || [theme.colors.primary];
+  const renderThemeCard = (theme: typeof THEMES[0]) => {
+    const isSel   = design.themeId === theme.id;
+    const shades  = COLOR_SHADES[theme.id] || [theme.colors.primary];
     return (
       <TouchableOpacity
         key={theme.id}
-        style={[
-          styles.themeCard,
-          {
-            backgroundColor: theme.colors.surface,
-            borderColor: isSelected ? theme.colors.primary : colors.accent,
-            borderWidth: isSelected ? 2 : 1,
-          },
-        ]}
+        style={[s.themeCard, isSel && s.themeCardSel]}
         onPress={() => handleThemePress(theme)}
-        activeOpacity={0.7}
+        activeOpacity={0.75}
       >
-        <View style={styles.swatches}>
-          {shades.slice(0, 5).map((shade, idx) => (
+        <LinearGradient
+          colors={['rgba(253,247,239,0.96)', 'rgba(244,236,224,0.92)']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <View style={s.swatches}>
+          {shades.slice(0, 5).map((shade, i) => (
             <View
-              key={idx}
+              key={i}
               style={[
-                styles.swatch,
-                { backgroundColor: shade },
-                design.colors.primary === shade && styles.swatchActive,
+                s.swatch, { backgroundColor: shade },
+                design.colors.primary === shade && s.swatchActive,
               ]}
             />
           ))}
         </View>
-        <View style={styles.themeInfo}>
-          <Text style={[styles.themeName, { color: theme.colors.text }]}>{theme.name}</Text>
-          {isSelected && (
-            <Text style={[styles.tapHint, { color: theme.colors.textSecondary }]}>
-              Tap for more shades
-            </Text>
-          )}
+        <View style={{ flex: 1 }}>
+          <Text style={s.themeName}>{theme.name}</Text>
+          {isSel && <Text style={s.tapHint}>Tap for more shades</Text>}
         </View>
-        {isSelected ? (
-          <Ionicons name="chevron-forward" size={22} color={theme.colors.primary} />
-        ) : null}
+        {isSel && <Ionicons name="chevron-forward" size={18} color="#C09A72" />}
       </TouchableOpacity>
     );
   };
 
   return (
-    <View style={styles.container}>
-      {/* 1. TEXT COLOR – collapsible, at top directly below tab nav */}
+    <View>
+
+      {/* TEXT COLOR — collapsible */}
       <TouchableOpacity
-        style={[styles.textColorHeader, { borderBottomColor: colors.accent }]}
-        onPress={() => setTextColorExpanded((e) => !e)}
+        style={s.textColorHeader}
+        onPress={() => setTextExpanded(e => !e)}
         activeOpacity={0.7}
       >
-        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>TEXT COLOR</Text>
+        <Text style={s.sectionLabel}>TEXT COLOR</Text>
         <Ionicons
-          name={textColorExpanded ? 'chevron-up' : 'chevron-down'}
-          size={22}
-          color={colors.textSecondary}
+          name={textExpanded ? 'chevron-up' : 'chevron-down'}
+          size={18} color="#B0997E"
         />
       </TouchableOpacity>
 
-      {textColorExpanded && (
-        <View style={styles.textColorExpanded}>
-          <Text style={[styles.textColorHint, { color: colors.textSecondary }]}>
-            Auto adapts to background. Override for manual control.
-          </Text>
-          <View style={styles.textColorRow}>
-            {TEXT_COLOR_MODES.map((m) => {
-              const isSelected = currentTextMode === m.id;
+      {textExpanded && (
+        <View style={s.textExpanded}>
+          <Text style={s.sectionDesc}>Auto adapts to background. Override for manual control.</Text>
+          <View style={s.modeRow}>
+            {TEXT_COLOR_MODES.map(m => {
+              const isSel = currentTextMode === m.id;
               return (
                 <TouchableOpacity
                   key={m.id}
-                  style={[
-                    styles.textColorPill,
-                    {
-                      backgroundColor: isSelected ? colors.primary : colors.surface,
-                      borderColor: isSelected ? colors.primary : colors.accent,
-                    },
-                  ]}
-                  onPress={() => handleTextColorModePress(m.id)}
+                  style={[s.modePill, isSel && s.modePillActive]}
+                  onPress={() => {
+                    setTextColorMode(m.id);
+                    if (m.id === 'custom') setTextExpanded(true);
+                  }}
                   activeOpacity={0.7}
                 >
-                  <Text
-                    style={[
-                      styles.textColorPillText,
-                      { color: isSelected ? '#FFFFFF' : colors.text },
-                    ]}
-                  >
-                    {m.label}
-                  </Text>
+                  <Text style={[s.modePillTxt, isSel && s.modePillTxtActive]}>{m.label}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
           {currentTextMode === 'custom' && (
-            <View style={styles.customPaletteRow}>
-              {CUSTOM_TEXT_COLORS.map((c, idx) => (
-                <TextColorSwatch
-                  key={idx}
-                  hex={c.hex}
-                  isSelected={
-                    (design.customTextColor ?? '#1a1a1a').toLowerCase() === c.hex.toLowerCase()
-                  }
-                  onPress={() => handleCustomTextColorSelect(c.hex)}
-                />
-              ))}
+            <View style={s.swatchPaletteRow}>
+              {CUSTOM_TEXT_COLORS.map((c, i) => {
+                const isSel = (design.customTextColor ?? '#1a1a1a').toLowerCase() === c.hex.toLowerCase();
+                const light = isLightSwatch(c.hex);
+                return (
+                  <TouchableOpacity
+                    key={i}
+                    style={[
+                      s.txtSwatch, { backgroundColor: c.hex },
+                      isSel && s.txtSwatchSel,
+                      light && s.txtSwatchLight,
+                    ]}
+                    onPress={() => setCustomTextColor(c.hex)}
+                    activeOpacity={0.7}
+                  >
+                    {isSel && <Ionicons name="checkmark" size={16} color={light ? '#1a1a1a' : '#FFF'} />}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           )}
         </View>
       )}
 
-      {/* 2. COLOR THEMES */}
-      <Text style={[styles.sectionTitle, styles.sectionTitleSpaced]}>COLOR THEMES</Text>
-      <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>
-        Tap a theme to apply, tap again to customize shades
-      </Text>
+      <View style={s.hairline} />
+
+      {/* COLOR THEMES */}
+      <Text style={[s.sectionLabel, { marginTop: 16, marginBottom: 4 }]}>COLOR THEMES</Text>
+      <Text style={s.sectionDesc}>Tap to apply, tap again to choose a shade</Text>
       {colorThemes.map(renderThemeCard)}
 
-      {/* 3. PRESET THEMES */}
-      <Text style={[styles.sectionTitle, styles.sectionTitleSpaced]}>PRESET THEMES</Text>
-      <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>
-        One-tap looks (Boy, Girl, Surprise, Basic)
-      </Text>
+      <View style={s.hairline} />
+
+      {/* PRESET THEMES */}
+      <Text style={[s.sectionLabel, { marginTop: 16, marginBottom: 4 }]}>PRESET THEMES</Text>
+      <Text style={s.sectionDesc}>One-tap looks — Boy, Girl, Surprise, Basic</Text>
       {presetThemes.map(renderThemeCard)}
 
-      {/* Shade picker modal */}
       {selectedTheme && (
         <ShadePicker
-          visible={shadePickerVisible}
+          visible={shadeVisible}
           themeName={selectedTheme.name}
           shades={COLOR_SHADES[selectedTheme.id] || [selectedTheme.colors.primary]}
           currentColor={design.colors.primary}
-          onSelect={handleShadeSelect}
-          onClose={() => setShadePickerVisible(false)}
+          onSelect={color => setCustomColor('primary', color)}
+          onClose={() => setShadeVisible(false)}
         />
       )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 1,
-    color: '#2D2D2D',
-    marginBottom: 4,
+const s = StyleSheet.create({
+  sectionLabel: {
+    fontSize: 10, fontWeight: '700', letterSpacing: 2.0, color: '#A08C76',
   },
   sectionDesc: {
-    fontSize: 13,
-    marginBottom: 16,
-    color: '#888',
+    fontSize: 13, color: '#9A8472', lineHeight: 19, marginBottom: 14, letterSpacing: 0.1,
   },
-  sectionTitleSpaced: {
-    marginTop: 20,
+  hairline: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(120,90,60,0.20)', marginVertical: 4,
   },
+
+  /* Text color */
+  textColorHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingVertical: 12, marginBottom: 4,
+  },
+  textExpanded: { paddingBottom: 8 },
+  modeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  modePill: {
+    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
+    borderWidth: 1, borderColor: 'rgba(180,155,125,0.30)',
+    backgroundColor: 'rgba(255,255,255,0.55)',
+  },
+  modePillActive: {
+    backgroundColor: 'rgba(192,154,114,0.22)',
+    borderColor: 'rgba(168,126,82,0.45)',
+  },
+  modePillTxt:       { fontSize: 13, fontWeight: '500', color: '#9A8472' },
+  modePillTxtActive: { color: '#7A5830', fontWeight: '700' },
+
+  swatchPaletteRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  txtSwatch: {
+    width: 38, height: 38, borderRadius: 19,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: 'rgba(0,0,0,0.10)',
+  },
+  txtSwatchSel:   { borderWidth: 2.5, borderColor: '#7A5830' },
+  txtSwatchLight: { borderColor: 'rgba(0,0,0,0.20)' },
+
+  /* Theme cards */
   themeCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 14,
+    flexDirection: 'row', alignItems: 'center',
+    borderRadius: 14, overflow: 'hidden',
+    paddingHorizontal: 14, paddingVertical: 14,
     marginBottom: 10,
+    borderWidth: 1, borderColor: 'rgba(180,155,125,0.20)',
+    shadowColor: '#7A5E3C',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.07, shadowRadius: 8, elevation: 2,
   },
-  swatches: {
-    flexDirection: 'row',
-    marginRight: 14,
+  themeCardSel: {
+    borderColor: 'rgba(168,126,82,0.45)', borderWidth: 1.5,
+    shadowOpacity: 0.12,
   },
+  swatches: { flexDirection: 'row', marginRight: 12, gap: 4 },
   swatch: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    marginRight: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.08)',
+    width: 20, height: 20, borderRadius: 10,
+    borderWidth: 0.5, borderColor: 'rgba(0,0,0,0.08)',
   },
-  swatchActive: {
-    borderWidth: 2,
-    borderColor: '#2D2D2D',
-  },
-  themeInfo: {
-    flex: 1,
-  },
-  themeName: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  tapHint: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+  swatchActive: { borderWidth: 2, borderColor: '#7A5830' },
+  themeName: { fontSize: 15, fontWeight: '600', color: '#3A2A1C', letterSpacing: -0.1 },
+  tapHint:   { fontSize: 11, color: '#B0997E', marginTop: 2 },
+
+  /* Shade picker modal */
+  overlay: {
+    flex: 1, backgroundColor: 'rgba(44,33,26,0.50)',
+    justifyContent: 'center', alignItems: 'center',
   },
   shadeModal: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 24,
-    width: '85%',
-    alignItems: 'center',
+    backgroundColor: 'rgba(253,247,239,0.98)', borderRadius: 22,
+    padding: 24, width: '85%', alignItems: 'center',
+    shadowColor: '#7A5E3C',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15, shadowRadius: 20, elevation: 10,
   },
   shadeTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#2D2D2D',
-    marginBottom: 4,
+    fontSize: 18, fontWeight: '600', color: '#2C211A',
+    fontFamily: 'Georgia', fontStyle: 'italic', marginBottom: 4,
   },
-  shadeSubtitle: {
-    fontSize: 13,
-    color: '#888',
-    marginBottom: 20,
-  },
-  shadeRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 12,
-  },
+  shadeHint:  { fontSize: 12, color: '#9A8472', marginBottom: 20 },
+  shadeRow:   { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12 },
   shadeSwatch: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
+    width: 44, height: 44, borderRadius: 22,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: 'rgba(0,0,0,0.10)',
   },
-  shadeSwatchSelected: {
-    borderWidth: 3,
-    borderColor: '#2D2D2D',
-  },
-  lightSwatchBorder: {
-    borderColor: 'rgba(0,0,0,0.2)',
-  },
-  textColorHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    marginTop: 0,
-    marginBottom: 4,
-    borderBottomWidth: 1,
-  },
-  textColorExpanded: {
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  textColorHint: {
-    fontSize: 13,
-    marginBottom: 12,
-  },
-  textColorRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 12,
-  },
-  textColorPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1.5,
-  },
-  textColorPillText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  customPaletteRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  textColorSwatch: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.12)',
-  },
-  textColorSwatchSelected: {
-    borderWidth: 3,
-    borderColor: '#2D2D2D',
-  },
-  textColorSwatchLightBorder: {
-    borderColor: 'rgba(0,0,0,0.2)',
-  },
+  shadeSwatchSel: { borderWidth: 3, borderColor: '#7A5830' },
 });

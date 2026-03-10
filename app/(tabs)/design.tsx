@@ -1,112 +1,148 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { useDesign } from '../../context/DesignContext';
-import DesignHeader from '../../components/design/DesignHeader';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import DesignPreview from '../../components/design/DesignPreview';
 import PresetsTab from '../../components/design/PresetsTab';
 import ColorsTab from '../../components/design/ColorsTab';
 import TypographyTab from '../../components/design/TypographyTab';
 import PhotoFiltersTab from '../../components/design/PhotoFiltersTab';
-import ScreenBackground from '../../components/shared/ScreenBackground';
 
-const TABS = ['Presets', 'Colors', 'Typography', 'Photo &\nFilters'] as const;
+const TABS = ['Presets', 'Colors', 'Typography', 'Photo'] as const;
 
 export default function DesignScreen() {
-  const { colors } = useDesign();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState(0);
 
   return (
-    <ScreenBackground>
-      <DesignHeader />
+    <View style={s.screen}>
+
+      {/* ── Botanical background — same as Home ── */}
+      <Image
+        source={require('../../assets/images/floral-bg.png')}
+        style={StyleSheet.absoluteFillObject}
+        resizeMode="cover"
+      />
+
+      {/* ── Header ── */}
+      <View style={[s.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity style={s.hBack} onPress={() => router.back()} activeOpacity={0.8}>
+          <Ionicons name="arrow-back" size={18} color="#6B5C4D" />
+        </TouchableOpacity>
+        <View style={s.headerCenter}>
+          <Text style={s.headerTitle}>
+            <Text style={s.headerTitleB}>Design</Text>
+            <Text style={s.headerTitleL}> Studio</Text>
+          </Text>
+          <Text style={s.headerSub}>Make it truly yours</Text>
+        </View>
+        <View style={s.hBack} />
+      </View>
 
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        style={{ backgroundColor: 'transparent' }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 108 }}
         showsVerticalScrollIndicator={false}
         stickyHeaderIndices={[0]}
       >
-        {/* Sticky: preview + tab bar - stays visible when scrolling font/filter lists */}
-        <View style={[styles.stickyHeader, { backgroundColor: colors.background }]}>
-          <DesignPreview />
-          <View style={[styles.tabBar, { backgroundColor: colors.background }]}>
-          <View style={styles.tabBarInner}>
+        {/* ── Sticky: Preview + Tab Bar ── */}
+        <View style={s.stickyBlock}>
+
+          {/* Mini preview card */}
+          <View style={s.previewWrap}>
+            <DesignPreview />
+          </View>
+
+          {/* Tab bar — warm editorial pills */}
+          <View style={s.tabBar}>
             {TABS.map((tab, i) => {
-              const isActive = activeTab === i;
+              const active = activeTab === i;
               return (
                 <TouchableOpacity
                   key={tab}
-                  style={styles.tab}
+                  style={[s.tab, active && s.tabActive]}
                   onPress={() => setActiveTab(i)}
                   activeOpacity={0.7}
                 >
-                  <Text
-                    style={[
-                      styles.tabText,
-                      {
-                        color: isActive ? colors.primary : colors.textSecondary,
-                        fontWeight: isActive ? '700' : '500',
-                      },
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {tab}
-                  </Text>
-                  {isActive ? (
-                    <View style={[styles.tabIndicator, { backgroundColor: colors.primary }]} />
-                  ) : null}
+                  <Text style={[s.tabTxt, active && s.tabTxtActive]}>{tab}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
-          <View style={[styles.tabDivider, { backgroundColor: colors.accent }]} />
-          </View>
+          <View style={s.tabHairline} />
         </View>
 
-        {/* Tab content */}
-        {activeTab === 0 ? <PresetsTab /> : null}
-        {activeTab === 1 ? <ColorsTab /> : null}
-        {activeTab === 2 ? <TypographyTab /> : null}
-        {activeTab === 3 ? <PhotoFiltersTab /> : null}
+        {/* ── Tab Content ── */}
+        <View style={s.content}>
+          {activeTab === 0 && <PresetsTab />}
+          {activeTab === 1 && <ColorsTab />}
+          {activeTab === 2 && <TypographyTab />}
+          {activeTab === 3 && <PhotoFiltersTab />}
+        </View>
+
       </ScrollView>
-    </ScreenBackground>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
+const s = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: '#E8D8C4' },
+
+  /* Header */
+  header: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 20, paddingBottom: 12,
   },
-  scrollContent: {
-    paddingBottom: 100,
+  hBack: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.78)',
+    alignItems: 'center', justifyContent: 'center',
   },
-  stickyHeader: {
-    paddingBottom: 0,
+  headerCenter: { flex: 1, alignItems: 'center' },
+  headerTitle: { fontSize: 20, letterSpacing: -0.3 },
+  headerTitleB: { color: '#2C211A', fontWeight: '700' },
+  headerTitleL: { color: '#A09282', fontWeight: '300' },
+  headerSub: {
+    fontSize: 11, color: '#A08C76', letterSpacing: 0.8,
+    marginTop: 1, fontFamily: 'Georgia', fontStyle: 'italic',
   },
+
+  /* Sticky block */
+  stickyBlock: {
+    backgroundColor: 'rgba(240,232,220,0.96)',
+  },
+  previewWrap: { paddingTop: 4 },
+
+  /* Tab bar */
   tabBar: {
-    paddingTop: 12,
-  },
-  tabBarInner: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
+    flexDirection: 'row', paddingHorizontal: 16,
+    paddingTop: 12, paddingBottom: 2, gap: 8,
   },
   tab: {
-    flex: 1,
-    alignItems: 'center',
-    paddingBottom: 10,
+    flex: 1, alignItems: 'center', paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.50)',
+    borderWidth: 1, borderColor: 'rgba(180,155,125,0.20)',
   },
-  tabText: {
-    fontSize: 13,
-    textAlign: 'center',
+  tabActive: {
+    backgroundColor: 'rgba(192,154,114,0.18)',
+    borderColor: 'rgba(168,126,82,0.40)',
   },
-  tabIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    left: '20%',
-    right: '20%',
-    height: 2.5,
-    borderRadius: 2,
+  tabTxt: {
+    fontSize: 12, fontWeight: '500',
+    color: '#A09080', letterSpacing: 0.2,
   },
-  tabDivider: {
-    height: 1,
+  tabTxtActive: {
+    color: '#7A5830', fontWeight: '700',
   },
+  tabHairline: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(120,90,60,0.20)',
+    marginTop: 10,
+  },
+
+  /* Content */
+  content: { paddingHorizontal: 16, paddingTop: 16 },
 });
