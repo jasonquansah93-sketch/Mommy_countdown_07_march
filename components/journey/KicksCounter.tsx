@@ -6,19 +6,13 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Animated,
-  Easing,
-  Platform,
+  View, Text, TouchableOpacity, StyleSheet,
+  Animated, Easing, Platform,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
-import { useDesign } from '../../context/DesignContext';
 import { loadJSON, saveJSON } from '../../utils/storage';
-import { RADIUS, GLASS } from '../../constants/tokens';
 import KicksHistoryModal from './KicksHistoryModal';
 
 Notifications.setNotificationHandler({
@@ -29,14 +23,11 @@ Notifications.setNotificationHandler({
   }),
 });
 
-const todayKey = () => `kicks_${new Date().toISOString().slice(0, 10)}`;
-const NOTIF_ID_KEY = 'kicks_notification_id';
+const todayKey    = () => `kicks_${new Date().toISOString().slice(0, 10)}`;
+const NOTIF_ID_KEY    = 'kicks_notification_id';
 const NOTIF_SETUP_KEY = 'kicks_notif_setup_done';
 
-interface KicksData {
-  date: string;
-  count: number;
-}
+interface KicksData { date: string; count: number }
 
 async function cancelKicksNotification() {
   const id = await loadJSON<string>(NOTIF_ID_KEY);
@@ -47,9 +38,7 @@ async function cancelKicksNotification() {
 }
 
 async function scheduleDailyKicksReminder() {
-  // Cancel any existing one first
   await cancelKicksNotification();
-
   const id = await Notifications.scheduleNotificationAsync({
     content: {
       title: 'Baby Kicks 👶',
@@ -57,32 +46,25 @@ async function scheduleDailyKicksReminder() {
       sound: false,
     },
     trigger: {
-      hour: 20,
-      minute: 0,
-      repeats: true,
+      hour: 20, minute: 0, repeats: true,
     } as Notifications.DailyTriggerInput,
   });
   await saveJSON(NOTIF_ID_KEY, id);
 }
 
 export default function KicksCounter() {
-  const { colors } = useDesign();
-  const [count, setCount] = useState(0);
+  const [count, setCount]               = useState(0);
   const [historyVisible, setHistoryVisible] = useState(false);
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const scaleAnim   = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const key = todayKey();
-    loadJSON<KicksData>(key).then((data) => {
-      if (data?.count) setCount(data.count);
-    });
+    loadJSON<KicksData>(todayKey()).then(data => { if (data?.count) setCount(data.count); });
   }, []);
 
   const requestAndSetupNotification = async () => {
     const alreadySetup = await loadJSON<boolean>(NOTIF_SETUP_KEY);
     if (alreadySetup) return;
-
     const { status } = await Notifications.requestPermissionsAsync();
     if (status === 'granted') {
       await scheduleDailyKicksReminder();
@@ -94,110 +76,87 @@ export default function KicksCounter() {
     const newCount = count + 1;
     setCount(newCount);
     await saveJSON<KicksData>(todayKey(), { date: new Date().toISOString(), count: newCount });
-
-    // On very first tap ever: ask for notification permission
-    if (newCount === 1) {
-      requestAndSetupNotification();
-    }
-
-    // Cancel today's reminder as soon as a kick is logged
-    if (newCount >= 1) {
-      cancelKicksNotification();
-    }
-
-    // Haptic
+    if (newCount === 1) requestAndSetupNotification();
+    if (newCount >= 1) cancelKicksNotification();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 
-    // Bounce animation on the number
     Animated.sequence([
       Animated.timing(scaleAnim, {
-        toValue: 1.22,
-        duration: 80,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
+        toValue: 1.22, duration: 80,
+        easing: Easing.out(Easing.cubic), useNativeDriver: true,
       }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-        bounciness: 10,
-      }),
+      Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, bounciness: 10 }),
     ]).start();
 
-    // Flash ring
     opacityAnim.setValue(1);
     Animated.timing(opacityAnim, {
-      toValue: 0,
-      duration: 600,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
+      toValue: 0, duration: 600,
+      easing: Easing.out(Easing.cubic), useNativeDriver: true,
     }).start();
   };
 
   const reset = async () => {
     setCount(0);
     await saveJSON<KicksData>(todayKey(), { date: new Date().toISOString(), count: 0 });
-    // Re-schedule reminder since kicks were reset
     const setup = await loadJSON<boolean>(NOTIF_SETUP_KEY);
     if (setup) scheduleDailyKicksReminder();
   };
 
   const getMessage = () => {
-    if (count === 0) return 'Tap every time you feel a kick';
-    if (count < 5) return 'Keep going...';
-    if (count < 10) return 'Baby is active today!';
+    if (count === 0)  return 'Tap every time you feel a kick';
+    if (count < 5)    return 'Keep going…';
+    if (count < 10)   return 'Baby is active today!';
     return 'What an active little one!';
   };
 
   return (
     <>
-      <View style={[styles.card, { backgroundColor: GLASS.surface, borderColor: GLASS.border }, GLASS.shadow]}>
-        {/* Header */}
-        <View style={styles.cardHeader}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Baby Kicks</Text>
-          <View style={styles.headerRight}>
+      <View style={s.card}>
+        <LinearGradient
+          colors={['rgba(253,247,239,0.96)', 'rgba(244,236,224,0.92)']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
+        />
+
+        {/* ── Header row ── */}
+        <View style={s.cardHeader}>
+          <Text style={s.cardLabel}>BABY KICKS</Text>
+          <View style={s.headerRight}>
             <TouchableOpacity
+              style={s.historyBtn}
               onPress={() => setHistoryVisible(true)}
               activeOpacity={0.7}
-              style={[styles.historyBtn, { backgroundColor: colors.primary + '15' }]}
             >
-              <Text style={[styles.historyBtnText, { color: colors.primary }]}>History</Text>
+              <Text style={s.historyBtnTxt}>History</Text>
             </TouchableOpacity>
             {count > 0 && (
-              <TouchableOpacity onPress={reset} activeOpacity={0.6} style={styles.resetBtn}>
-                <Text style={[styles.resetText, { color: colors.textSecondary }]}>Reset</Text>
+              <TouchableOpacity onPress={reset} activeOpacity={0.6}>
+                <Text style={s.resetTxt}>Reset</Text>
               </TouchableOpacity>
             )}
           </View>
         </View>
 
-        {/* Tap Area */}
-        <TouchableOpacity
-          onPress={handleTap}
-          activeOpacity={0.8}
-          style={styles.tapArea}
-        >
+        {/* ── Tap area ── */}
+        <TouchableOpacity onPress={handleTap} activeOpacity={0.85} style={s.tapArea}>
           {/* Flash ring */}
           <Animated.View
-            style={[
-              styles.flashRing,
-              { borderColor: colors.primary, opacity: opacityAnim },
-            ]}
+            style={[s.flashRing, { opacity: opacityAnim }]}
           />
-
           {/* Count bubble */}
-          <View style={[styles.bubble, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '40' }]}>
-            <Animated.Text style={[styles.countText, { color: colors.primary, transform: [{ scale: scaleAnim }] }]}>
+          <View style={s.bubble}>
+            <Animated.Text
+              style={[s.countTxt, { transform: [{ scale: scaleAnim }] }]}
+            >
               {count}
             </Animated.Text>
-            <Text style={[styles.unitText, { color: colors.primary }]}>kicks today</Text>
+            <Text style={s.unitTxt}>kicks today</Text>
           </View>
         </TouchableOpacity>
 
-        {/* Message */}
-        <Text style={[styles.message, { color: colors.textSecondary }]}>{getMessage()}</Text>
-
-        {/* Date */}
-        <Text style={[styles.dateLabel, { color: colors.textSecondary }]}>
+        {/* ── Message & date ── */}
+        <Text style={s.message}>{getMessage()}</Text>
+        <Text style={s.dateLabel}>
           {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
         </Text>
       </View>
@@ -207,89 +166,67 @@ export default function KicksCounter() {
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   card: {
-    borderRadius: RADIUS.card,
-    borderWidth: 1,
-    padding: 22,
+    borderRadius: 20, overflow: 'hidden', position: 'relative',
+    paddingHorizontal: 20, paddingTop: 20, paddingBottom: 22,
     alignItems: 'center',
+    borderWidth: 1, borderColor: 'rgba(180,155,125,0.20)',
+    shadowColor: '#7A5E3C',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.07, shadowRadius: 8, elevation: 2,
   },
+
+  /* Header */
   cardHeader: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    width: '100%', flexDirection: 'row',
+    justifyContent: 'space-between', alignItems: 'center',
     marginBottom: 22,
   },
-  cardTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+  cardLabel: {
+    fontSize: 10, fontWeight: '700', letterSpacing: 2.0, color: '#A08C76',
   },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   historyBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 14,
+    paddingHorizontal: 14, paddingVertical: 6, borderRadius: 14,
+    backgroundColor: 'rgba(192,154,114,0.16)',
+    borderWidth: 1, borderColor: 'rgba(168,126,82,0.20)',
   },
-  historyBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  resetBtn: {},
-  resetText: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
+  historyBtnTxt: { fontSize: 12, fontWeight: '600', color: '#7A5830' },
+  resetTxt: { fontSize: 12, fontWeight: '500', color: '#B0997E' },
+
+  /* Tap area */
   tapArea: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 18,
-    position: 'relative',
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 18, position: 'relative',
   },
   flashRing: {
     position: 'absolute',
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    borderWidth: 2,
+    width: 152, height: 152, borderRadius: 76,
+    borderWidth: 2, borderColor: 'rgba(192,154,114,0.70)',
   },
   bubble: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 140, height: 140, borderRadius: 70,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(192,154,114,0.12)',
+    borderWidth: 2, borderColor: 'rgba(168,126,82,0.35)',
   },
-  countText: {
-    fontSize: 54,
-    fontWeight: '300',
-    lineHeight: 62,
-    letterSpacing: -2,
+  countTxt: {
+    fontSize: 54, fontWeight: '300', lineHeight: 62,
+    letterSpacing: -2, color: '#2C211A',
+    fontFamily: 'Georgia',
   },
-  unitText: {
-    fontSize: 12,
-    fontWeight: '500',
-    letterSpacing: 0.5,
-    marginTop: -4,
-    opacity: 0.8,
+  unitTxt: {
+    fontSize: 11, fontWeight: '500', letterSpacing: 0.5,
+    color: '#9A8472', marginTop: -4,
   },
+
+  /* Footer text */
   message: {
-    fontSize: 14,
-    fontWeight: '400',
-    textAlign: 'center',
-    marginBottom: 8,
+    fontSize: 14, color: '#9A8472', textAlign: 'center',
+    fontFamily: 'Georgia', fontStyle: 'italic', marginBottom: 6,
   },
   dateLabel: {
-    fontSize: 12,
-    fontWeight: '400',
-    textAlign: 'center',
-    opacity: 0.6,
+    fontSize: 11, color: 'rgba(160,140,118,0.70)', textAlign: 'center',
   },
 });
