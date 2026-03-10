@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, Share, Dimensions,
+  TouchableOpacity, Share, Dimensions, Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -46,45 +46,6 @@ function getPct(start: string | Date, due: string | Date) {
   return Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
 }
 
-/* ─────────────────────────────────────────
-   Organic leaf/petal shape helper.
-   Instead of borderRadius:999 (perfect oval),
-   each shape uses asymmetric per-corner radii
-   to mimic natural botanical silhouettes.
-───────────────────────────────────────── */
-type LeafStyle = {
-  top?: number; bottom?: number;
-  left?: number; right?: number;
-  width: number; height: number;
-  tl: number; tr: number; bl: number; br: number;
-  color: string;
-  rotate: string;
-  opacity?: number;
-};
-
-function Leaf({ s: ls }: { s: LeafStyle }) {
-  return (
-    <View
-      pointerEvents="none"
-      style={{
-        position: 'absolute',
-        top:    ls.top,
-        bottom: ls.bottom,
-        left:   ls.left,
-        right:  ls.right,
-        width:  ls.width,
-        height: ls.height,
-        borderTopLeftRadius:     ls.tl,
-        borderTopRightRadius:    ls.tr,
-        borderBottomLeftRadius:  ls.bl,
-        borderBottomRightRadius: ls.br,
-        backgroundColor: ls.color,
-        opacity: ls.opacity ?? 1,
-        transform: [{ rotate: ls.rotate }],
-      }}
-    />
-  );
-}
 
 export default function HomeScreenEditorialV2() {
   const insets = useSafeAreaInsets();
@@ -124,11 +85,11 @@ export default function HomeScreenEditorialV2() {
   return (
     <View style={s.screen}>
 
-      {/* ── Warme Basis-Gradient — fixierter Screen-Hintergrund ── */}
-      <LinearGradient
-        colors={['#EDE6D8', '#E4D9C8', '#D8CDB8', '#CFC0A6']}
-        start={{ x: 0.15, y: 0 }} end={{ x: 0.85, y: 1 }}
+      {/* ── Botanische Textur — echtes Foto, fixierter Hintergrund ── */}
+      <Image
+        source={require('../../assets/images/floral-bg.png')}
         style={StyleSheet.absoluteFillObject}
+        resizeMode="cover"
       />
 
       {/* ══ HEADER ══ */}
@@ -158,66 +119,6 @@ export default function HomeScreenEditorialV2() {
         contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + 108 }]}
       >
 
-        {/* ══════════════════════════════════════════════
-            BOTANISCHE TEXTUR — scrollt mit dem Content
-            Organische Blatt-/Blütenformen mit
-            asymmetrischen Eckenradien (kein borderRadius:999)
-        ══════════════════════════════════════════════ */}
-        <View style={s.botLayer} pointerEvents="none">
-
-          {/* ── Großes Hauptblatt oben-rechts (dominanter Anker) ── */}
-          <Leaf s={{ top: -50, right: -30, width: 240, height: 340,
-            tl: 120, tr: 24,  bl: 24,  br: 120,
-            color: 'rgba(255,252,242,0.52)', rotate: '18deg' }} />
-          <Leaf s={{ top:   8, right:   8, width: 160, height: 230,
-            tl:  80, tr: 16,  bl: 16,  br:  80,
-            color: 'rgba(220,204,178,0.44)', rotate: '32deg' }} />
-          {/* ── Kleines Akzentblatt oben-rechts ── */}
-          <Leaf s={{ top:  48, right:  76, width: 62, height: 94,
-            tl:  38, tr:  8,  bl:  8,  br:  38,
-            color: 'rgba(248,238,222,0.40)', rotate: '-22deg' }} />
-          <Leaf s={{ top:  30, right: 118, width: 38, height: 60,
-            tl:  24, tr:  6,  bl:  6,  br:  24,
-            color: 'rgba(255,255,255,0.36)', rotate: '48deg' }} />
-
-          {/* ── Breites Blatt oben-links ── */}
-          <Leaf s={{ top:  72, left: -24, width: 148, height: 84,
-            tl:  50, tr: 18,  bl: 18,  br:  50,
-            color: 'rgba(234,218,196,0.34)', rotate: '-16deg' }} />
-          {/* ── Schmales Stielblatt oben-links ── */}
-          <Leaf s={{ top: 130, left:  12, width:  34, height: 64,
-            tl:  20, tr:  6,  bl:  6,  br:  20,
-            color: 'rgba(248,238,220,0.28)', rotate: '-38deg' }} />
-
-          {/* ── Mitte-rechts (hinter Time remaining) ── */}
-          <Leaf s={{ top: 410, right: -28, width: 186, height: 128,
-            tl:  72, tr: 22,  bl: 22,  br:  72,
-            color: 'rgba(224,208,184,0.30)', rotate: '10deg' }} />
-          <Leaf s={{ top: 470, right:  54, width:  48, height: 76,
-            tl:  30, tr:  8,  bl:  8,  br:  30,
-            color: 'rgba(248,238,222,0.26)', rotate: '-30deg' }} />
-
-          {/* ── Mitte-links (hinter Pregnancy-Sektion) ── */}
-          <Leaf s={{ top: 548, left: -28, width: 210, height: 104,
-            tl:  62, tr: 18,  bl: 18,  br:  62,
-            color: 'rgba(230,214,192,0.28)', rotate: '-10deg' }} />
-          <Leaf s={{ top: 634, left:  38, width:  46, height: 68,
-            tl:  28, tr:  8,  bl:  8,  br:  28,
-            color: 'rgba(252,244,230,0.24)', rotate: '26deg' }} />
-
-          {/* ── Unten-rechts (hinter Customize Card) ── */}
-          <Leaf s={{ top: 842, right: -22, width: 178, height: 136,
-            tl:  68, tr: 20,  bl: 20,  br:  68,
-            color: 'rgba(220,204,182,0.26)', rotate: '20deg' }} />
-          <Leaf s={{ top: 968, left: -18, width: 162, height: 100,
-            tl:  56, tr: 16,  bl: 16,  br:  56,
-            color: 'rgba(234,218,196,0.22)', rotate: '-13deg' }} />
-          {/* ── Extra-Akzentblatt unten-rechts ── */}
-          <Leaf s={{ top: 1080, right: 30, width: 42, height: 66,
-            tl:  26, tr:  7,  bl:  7,  br:  26,
-            color: 'rgba(248,236,218,0.20)', rotate: '38deg' }} />
-        </View>
-
         {/* ════════════════════════════════════════
             1. HERO AREA
             KEIN Card-Container — Elemente schweben
@@ -226,20 +127,6 @@ export default function HomeScreenEditorialV2() {
             kein borderRadius, kein sichtbares Rechteck)
         ════════════════════════════════════════ */}
         <View style={s.heroArea}>
-          {/* Sanfter Wärmeton-Hauch hinter den Hero-Elementen —
-              kein Card, nur eine weiche Aufhellung der Fläche */}
-          <LinearGradient
-            colors={[
-              'rgba(255,252,246,0.28)',
-              'rgba(253,248,240,0.18)',
-              'rgba(255,251,244,0.10)',
-              'rgba(255,255,255,0.00)',
-            ]}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
-            style={StyleSheet.absoluteFillObject}
-          />
-
           {/* Badge + Edit-Button Row */}
           <View style={s.heroTop}>
             <View style={s.badge}>
@@ -456,7 +343,7 @@ export default function HomeScreenEditorialV2() {
 
 /* ──────────────────────────────────── Styles ──────────────────────────────────── */
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#E5DBCA' },
+  screen: { flex: 1, backgroundColor: '#E8D8C4' },
 
   /* ── Header ── */
   header: {
@@ -479,12 +366,6 @@ const s = StyleSheet.create({
   },
 
   scroll: { paddingHorizontal: H_PAD, paddingTop: 10 },
-
-  /* ── Botanische Textur-Schicht (scrollt mit Content) ── */
-  botLayer: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, height: 2500,
-  },
 
   /* ════════════════════════════════════
      HERO — KEIN sichtbarer Container.
