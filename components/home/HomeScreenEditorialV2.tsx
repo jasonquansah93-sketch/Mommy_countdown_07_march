@@ -49,12 +49,11 @@ function getPct(start: string | Date, due: string | Date) {
 
 /* ── Cycling units for Time Remaining ── */
 const UNITS = [
-  { key: 'days',         label: 'days',         hint: 'weeks'        },
-  { key: 'weeks',        label: 'weeks',         hint: 'hours'        },
-  { key: 'hours',        label: 'hours',         hint: 'minutes'      },
-  { key: 'minutes',      label: 'minutes',       hint: 'seconds'      },
-  { key: 'seconds',      label: 'seconds',       hint: 'milliseconds' },
-  { key: 'milliseconds', label: 'milliseconds',  hint: 'days'         },
+  { key: 'days',    label: 'days',    hint: 'weeks'   },
+  { key: 'weeks',   label: 'weeks',   hint: 'hours'   },
+  { key: 'hours',   label: 'hours',   hint: 'minutes' },
+  { key: 'minutes', label: 'minutes', hint: 'seconds' },
+  { key: 'seconds', label: 'seconds', hint: 'days'    },
 ] as const;
 type UnitKey = typeof UNITS[number]['key'];
 
@@ -66,7 +65,7 @@ function getUnitValue(key: UnitKey, t: ReturnType<typeof getLeft>): number {
     case 'hours':        return Math.floor(totalMs / 3600000);
     case 'minutes':      return Math.floor(totalMs / 60000);
     case 'seconds':      return Math.floor(totalMs / 1000);
-    case 'milliseconds': return totalMs;
+    default:             return 0;
   }
 }
 
