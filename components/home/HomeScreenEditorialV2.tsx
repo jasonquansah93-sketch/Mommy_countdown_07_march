@@ -29,6 +29,7 @@ function getLeft(due: string | Date) {
   const ms = Math.max(0, d.getTime() - Date.now());
   const tot = Math.floor(ms / 86400000);
   return {
+    ms,
     weeks:   Math.floor(tot / 7),
     days:    tot % 7,
     hours:   Math.floor((ms % 86400000) / 3600000),
@@ -46,6 +47,28 @@ function getPct(start: string | Date, due: string | Date) {
   return Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
 }
 
+/* ── Cycling units for Time Remaining ── */
+const UNITS = [
+  { key: 'days',         label: 'days',         hint: 'weeks'        },
+  { key: 'weeks',        label: 'weeks',         hint: 'hours'        },
+  { key: 'hours',        label: 'hours',         hint: 'minutes'      },
+  { key: 'minutes',      label: 'minutes',       hint: 'seconds'      },
+  { key: 'seconds',      label: 'seconds',       hint: 'milliseconds' },
+  { key: 'milliseconds', label: 'milliseconds',  hint: 'days'         },
+] as const;
+type UnitKey = typeof UNITS[number]['key'];
+
+function getUnitValue(key: UnitKey, t: ReturnType<typeof getLeft>): number {
+  const totalMs = t.ms;
+  switch (key) {
+    case 'days':         return Math.floor(totalMs / 86400000);
+    case 'weeks':        return Math.floor(totalMs / 604800000);
+    case 'hours':        return Math.floor(totalMs / 3600000);
+    case 'minutes':      return Math.floor(totalMs / 60000);
+    case 'seconds':      return Math.floor(totalMs / 1000);
+    case 'milliseconds': return totalMs;
+  }
+}
 
 export default function HomeScreenEditorialV2() {
   const insets = useSafeAreaInsets();
@@ -64,6 +87,7 @@ export default function HomeScreenEditorialV2() {
 
   const gender: GenderValue = (profile?.gender as GenderValue) || 'boy';
   const [time, setTime] = useState(() => getLeft(dueDate));
+  const [unitIdx, setUnitIdx] = useState(0);
 
   useEffect(() => {
     const id = setInterval(() => setTime(getLeft(dueDate)), 1000);
@@ -75,6 +99,10 @@ export default function HomeScreenEditorialV2() {
   const gBadge =
     gender === 'boy'  ? "IT'S A BOY" :
     gender === 'girl' ? "IT'S A GIRL" : "IT'S A SURPRISE";
+
+  const currentUnit = UNITS[unitIdx];
+  const remainingValue = getUnitValue(currentUnit.key, time);
+  const cycleUnit = () => setUnitIdx(i => (i + 1) % UNITS.length);
 
   const onShare = useCallback(() => {
     Share.share({
@@ -120,13 +148,10 @@ export default function HomeScreenEditorialV2() {
       >
 
         {/* ════════════════════════════════════════
-            1. HERO AREA
-            KEIN Card-Container — Elemente schweben
-            direkt auf der botanischen Fläche.
-            Sehr subtiler Warmton-Hauch (kein Rahmen,
-            kein borderRadius, kein sichtbares Rechteck)
+            1. HERO AREA — kein Card-Container
         ════════════════════════════════════════ */}
         <View style={s.heroArea}>
+
           {/* Badge + Edit-Button Row */}
           <View style={s.heroTop}>
             <View style={s.badge}>
@@ -145,7 +170,7 @@ export default function HomeScreenEditorialV2() {
           {/* Headline */}
           <Text style={s.heroTitle}>Meeting you in...</Text>
 
-          {/* Countdown — Weeks / Days / Hours */}
+          {/* ── WEEKS / DAYS / HOURS ── */}
           <View style={s.countRow}>
             <View style={s.countCol}>
               <Text style={s.countNum}>{pad(time.weeks)}</Text>
@@ -163,16 +188,16 @@ export default function HomeScreenEditorialV2() {
             </View>
           </View>
 
-          {/* Timer Pill — Min:Sec */}
-          <View style={s.timerPill}>
-            <LinearGradient
-              colors={['rgba(255,255,255,0.97)', 'rgba(253,249,244,0.95)']}
-              style={StyleSheet.absoluteFillObject}
-            />
-            <Text style={s.timerNum}>{pad(time.minutes)}:{pad(time.seconds)}</Text>
-            <View style={s.timerMeta}>
-              <Text style={s.timerLbl}>MIN</Text>
-              <Text style={s.timerLbl}>SEC</Text>
+          {/* ── MIN : SEC — kein Kasten, frei auf dem Hintergrund ── */}
+          <View style={s.minSecRow}>
+            <View style={s.minSecCol}>
+              <Text style={s.minSecNum}>{pad(time.minutes)}</Text>
+              <Text style={s.minSecLbl}>MIN</Text>
+            </View>
+            <Text style={s.minSecColon}>:</Text>
+            <View style={s.minSecCol}>
+              <Text style={s.minSecNum}>{pad(time.seconds)}</Text>
+              <Text style={s.minSecLbl}>SEC</Text>
             </View>
           </View>
 
@@ -189,48 +214,60 @@ export default function HomeScreenEditorialV2() {
         </View>
 
         {/* ════════════════════════════════════════
-            HAIRLINE — echte dünne Trennlinie
+            HAIRLINE
         ════════════════════════════════════════ */}
         <View style={s.hairline} />
 
         {/* ════════════════════════════════════════
-            2. TIME REMAINING
+            2. TIME REMAINING — Cycling Big Number
         ════════════════════════════════════════ */}
-        <View style={s.sec}>
-          <View style={s.secHead}>
-            <Text style={s.secTitle}>Time remaining</Text>
-            <View style={s.secLine} />
+        <TouchableOpacity
+          style={s.sec}
+          onPress={cycleUnit}
+          activeOpacity={0.85}
+        >
+          {/* Header row */}
+          <View style={s.remHead}>
+            <Text style={s.remTitle}>TIME REMAINING</Text>
+            <Text style={s.remHint}>tap · {currentUnit.hint}</Text>
           </View>
-          <Text style={s.secSub}>Tap for weeks</Text>
 
-          {/* Progress Card */}
-          <View style={s.progCard}>
-            <LinearGradient
-              colors={['rgba(253,247,239,0.95)', 'rgba(249,242,232,0.93)', 'rgba(244,236,224,0.91)']}
-              start={{ x: 0.05, y: 0 }} end={{ x: 0.95, y: 1 }}
-              style={StyleSheet.absoluteFillObject}
-            />
-            <View style={s.progTop}>
-              <Text style={s.progDate}>Start  {fmt(startDate)}</Text>
-              <Text style={s.progPct}>{pct}%</Text>
-            </View>
-            <View style={s.progTrack}>
-              <LinearGradient
-                colors={['#B8895A', '#C49A6E', '#B8895A']}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={[s.progFill, { width: `${pct}%` as any }]}
-              />
-            </View>
-            <Text style={s.progDateBot}>Due  {fmt(dueDate)}</Text>
+          {/* Big cycling number */}
+          <Text style={s.remNum}>
+            {remainingValue.toLocaleString()}
+          </Text>
+          <Text style={s.remUnit}>{currentUnit.label}</Text>
+        </TouchableOpacity>
+
+        {/* ════════════════════════════════════════
+            JOURNEY PROGRESS CARD
+        ════════════════════════════════════════ */}
+        <View style={[s.progCard, { marginBottom: 22 }]}>
+          <LinearGradient
+            colors={['rgba(253,247,239,0.95)', 'rgba(249,242,232,0.93)', 'rgba(244,236,224,0.91)']}
+            start={{ x: 0.05, y: 0 }} end={{ x: 0.95, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <View style={s.progTop}>
+            <Text style={s.progDate}>Start  {fmt(startDate)}</Text>
+            <Text style={s.progPct}>{pct}%</Text>
           </View>
+          <View style={s.progTrack}>
+            <LinearGradient
+              colors={['#B8895A', '#C49A6E', '#B8895A']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={[s.progFill, { width: `${pct}%` as any }]}
+            />
+          </View>
+          <Text style={s.progDateBot}>Due  {fmt(dueDate)}</Text>
         </View>
 
         {/* ════════════════════════════════════════
-            3. YOUR PREGNANCY — 4 Tiles
+            3. IT'S A… — 3 Tiles (kein Profile)
         ════════════════════════════════════════ */}
         <View style={s.sec}>
           <View style={s.secHead}>
-            <Text style={s.secTitle}>Your pregnancy</Text>
+            <Text style={s.secTitle}>It's a…</Text>
             <View style={s.secLine} />
           </View>
 
@@ -239,17 +276,13 @@ export default function HomeScreenEditorialV2() {
               { key: 'boy'      as GenderValue, label: 'Boy',      icon: 'male-outline'   },
               { key: 'girl'     as GenderValue, label: 'Girl',     icon: 'female-outline' },
               { key: 'surprise' as GenderValue, label: 'Surprise', icon: 'gift-outline'   },
-              { key: null,                       label: 'Profile',  icon: 'person-outline' },
             ] as const).map((item, i) => {
-              const sel = item.key !== null && gender === item.key;
+              const sel = gender === item.key;
               return (
                 <TouchableOpacity
                   key={i}
                   style={[s.tile, sel && s.tileSel]}
-                  onPress={() => {
-                    if (item.key !== null) updateProfile?.({ gender: item.key });
-                    else router.push('/(tabs)/profile');
-                  }}
+                  onPress={() => updateProfile?.({ gender: item.key })}
                   activeOpacity={0.78}
                 >
                   <LinearGradient
@@ -281,40 +314,22 @@ export default function HomeScreenEditorialV2() {
             start={{ x: 0.05, y: 0 }} end={{ x: 0.95, y: 1 }}
             style={StyleSheet.absoluteFillObject}
           />
-          {/* Organische Blätter innerhalb der Card */}
-          <View
-            pointerEvents="none"
-            style={{
-              position: 'absolute', right: -20, top: -16,
-              width: 172, height: 156,
-              borderTopLeftRadius: 86, borderTopRightRadius: 18,
-              borderBottomLeftRadius: 18, borderBottomRightRadius: 86,
-              backgroundColor: 'rgba(224,210,190,0.40)',
-              transform: [{ rotate: '14deg' }],
-            }}
-          />
-          <View
-            pointerEvents="none"
-            style={{
-              position: 'absolute', left: -12, bottom: -10,
-              width: 200, height: 102,
-              borderTopLeftRadius: 62, borderTopRightRadius: 16,
-              borderBottomLeftRadius: 16, borderBottomRightRadius: 62,
-              backgroundColor: 'rgba(218,204,182,0.36)',
-              transform: [{ rotate: '-10deg' }],
-            }}
-          />
-          <View
-            pointerEvents="none"
-            style={{
-              position: 'absolute', right: 42, bottom: 20,
-              width: 58, height: 82,
-              borderTopLeftRadius: 36, borderTopRightRadius: 8,
-              borderBottomLeftRadius: 8, borderBottomRightRadius: 36,
-              backgroundColor: 'rgba(232,218,198,0.30)',
-              transform: [{ rotate: '34deg' }],
-            }}
-          />
+          <View pointerEvents="none" style={{
+            position: 'absolute', right: -20, top: -16,
+            width: 172, height: 156,
+            borderTopLeftRadius: 86, borderTopRightRadius: 18,
+            borderBottomLeftRadius: 18, borderBottomRightRadius: 86,
+            backgroundColor: 'rgba(224,210,190,0.40)',
+            transform: [{ rotate: '14deg' }],
+          }} />
+          <View pointerEvents="none" style={{
+            position: 'absolute', left: -12, bottom: -10,
+            width: 200, height: 102,
+            borderTopLeftRadius: 62, borderTopRightRadius: 16,
+            borderBottomLeftRadius: 16, borderBottomRightRadius: 62,
+            backgroundColor: 'rgba(218,204,182,0.36)',
+            transform: [{ rotate: '-10deg' }],
+          }} />
 
           <Text style={s.custTitle}>Make it truly yours</Text>
           <Text style={s.custBody}>
@@ -367,101 +382,73 @@ const s = StyleSheet.create({
 
   scroll: { paddingHorizontal: H_PAD, paddingTop: 10 },
 
-  /* ════════════════════════════════════
-     HERO — KEIN sichtbarer Container.
-     Nur ein ganz zarter Warm-Hauch als
-     Hintergrund (LinearGradient, kein Rand).
-  ════════════════════════════════════ */
-  heroArea: {
-    paddingTop: 6,
-    paddingBottom: 28,
-  },
-  heroTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
+  /* ── Hero ── */
+  heroArea:   { paddingTop: 6, paddingBottom: 28 },
+  heroTop:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 
-  /* Badge — weiße Pill */
   badge: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.84)',
+    borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.84)',
   },
   badgeTxt: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, color: '#8B6E50' },
 
-  /* Edit-Button — weißer Kreis */
   editBtn: {
     width: 36, height: 36, borderRadius: 18,
     backgroundColor: 'rgba(255,255,255,0.75)',
     alignItems: 'center', justifyContent: 'center',
   },
 
-  /* Headline */
   heroTitle: {
-    textAlign: 'center',
-    fontSize: 38,
-    color: '#3A2A1C',
-    fontFamily: 'Georgia',
-    fontStyle: 'italic',
-    fontWeight: '400',
-    letterSpacing: 0.2,
-    marginTop: 20,
-    marginBottom: 18,
+    textAlign: 'center', fontSize: 38, color: '#3A2A1C',
+    fontFamily: 'Georgia', fontStyle: 'italic', fontWeight: '400',
+    letterSpacing: 0.2, marginTop: 20, marginBottom: 18,
   },
 
-  /* Countdown-Zahlen */
+  /* Countdown WEEKS / DAYS / HOURS */
   countRow: {
     flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'center', marginBottom: 20,
+    justifyContent: 'center', marginBottom: 16,
   },
-  countCol: { flex: 1, alignItems: 'center' },
+  countCol:  { flex: 1, alignItems: 'center' },
   countNum: {
-    fontSize: 72, lineHeight: 76,
-    fontWeight: '300', letterSpacing: -2,
-    color: '#2C211A', fontFamily: 'Georgia',
+    fontSize: 72, lineHeight: 76, fontWeight: '300',
+    letterSpacing: -2, color: '#2C211A', fontFamily: 'Georgia',
     fontVariant: ['tabular-nums'],
   },
   countLbl: {
-    marginTop: 5, fontSize: 10,
-    fontWeight: '700', letterSpacing: 2.2,
-    color: '#A08C76',
+    marginTop: 5, fontSize: 10, fontWeight: '700',
+    letterSpacing: 2.2, color: '#A08C76',
   },
   countDiv: {
     width: 1, height: 72,
-    backgroundColor: 'rgba(100,78,55,0.18)',
-    marginBottom: 18,
+    backgroundColor: 'rgba(100,78,55,0.18)', marginBottom: 18,
   },
 
-  /* Timer Pill */
-  timerPill: {
-    alignSelf: 'center',
-    width: CW - 40,
-    height: 68,
-    borderRadius: 34,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.90)',
-    marginBottom: 18,
+  /* ── MIN : SEC — kein Kasten, frei auf dem Hintergrund ── */
+  minSecRow: {
+    flexDirection: 'row', alignItems: 'flex-start',
+    justifyContent: 'center', marginBottom: 20,
   },
-  timerNum: {
-    fontSize: 34, fontWeight: '300',
-    color: '#2C211A', letterSpacing: 2,
+  minSecCol: { alignItems: 'center', minWidth: 64 },
+  minSecNum: {
+    fontSize: 44, lineHeight: 48, fontWeight: '300',
+    letterSpacing: -1, color: '#2C211A', fontFamily: 'Georgia',
     fontVariant: ['tabular-nums'],
   },
-  timerMeta: { marginLeft: 10 },
-  timerLbl: {
-    fontSize: 10, fontWeight: '700',
-    letterSpacing: 1.6, color: '#A08C76', lineHeight: 16,
+  minSecLbl: {
+    marginTop: 3, fontSize: 10, fontWeight: '700',
+    letterSpacing: 2.2, color: '#A08C76',
+  },
+  minSecColon: {
+    fontSize: 44, lineHeight: 48, fontWeight: '300',
+    color: 'rgba(100,78,55,0.35)', marginHorizontal: 6,
+    fontFamily: 'Georgia',
   },
 
-  /* Share Button — volle Breite, Pill-Form */
+  /* Share Button */
   shareBtn: {
-    height: 52, borderRadius: 26,
-    overflow: 'hidden',
+    height: 52, borderRadius: 26, overflow: 'hidden',
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     alignSelf: 'stretch',
   },
@@ -471,18 +458,39 @@ const s = StyleSheet.create({
   hairline: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: 'rgba(120,90,60,0.22)',
-    marginTop: 2,
-    marginBottom: 24,
+    marginTop: 2, marginBottom: 24,
   },
 
   /* ── Sections ── */
   sec:      { marginBottom: 22 },
-  secHead:  { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  secHead:  { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   secTitle: { fontSize: 17, fontWeight: '600', color: '#4A3A2C', letterSpacing: -0.1 },
   secLine:  { flex: 1, height: 1, backgroundColor: 'rgba(100,80,60,0.14)', marginLeft: 10 },
-  secSub:   { fontSize: 12, color: '#B0A090', marginBottom: 10, letterSpacing: 0.2 },
 
-  /* ── Progress Card ── */
+  /* ── TIME REMAINING — cycling big number ── */
+  remHead: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'center', marginBottom: 4,
+  },
+  remTitle: {
+    fontSize: 11, fontWeight: '700', letterSpacing: 1.8,
+    color: '#8B7260', textTransform: 'uppercase',
+  },
+  remHint: {
+    fontSize: 12, color: '#B0997E', letterSpacing: 0.3,
+  },
+  remNum: {
+    fontSize: 96, lineHeight: 100, fontWeight: '700',
+    color: '#2C211A', letterSpacing: -3,
+    fontVariant: ['tabular-nums'],
+  },
+  remUnit: {
+    fontSize: 22, fontWeight: '300', color: '#8B7260',
+    letterSpacing: 0.5, marginTop: 2, marginBottom: 4,
+    fontFamily: 'Georgia', fontStyle: 'italic',
+  },
+
+  /* ── Journey Progress Card ── */
   progCard: {
     borderRadius: 18, overflow: 'hidden',
     paddingHorizontal: 18, paddingVertical: 16,
@@ -502,10 +510,10 @@ const s = StyleSheet.create({
   progFill:    { height: 6, borderRadius: 3 },
   progDateBot: { fontSize: 14, color: '#5A4A38', fontWeight: '500', letterSpacing: 0.1, marginTop: 10 },
 
-  /* ── Pregnancy Tiles ── */
-  tileRow: { flexDirection: 'row', gap: 8 },
+  /* ── It's a… — 3 Tiles ── */
+  tileRow: { flexDirection: 'row', gap: 10 },
   tile: {
-    flex: 1, height: 88, borderRadius: 16,
+    flex: 1, height: 92, borderRadius: 16,
     alignItems: 'center', justifyContent: 'center',
     overflow: 'hidden',
     backgroundColor: 'rgba(255,255,255,0.45)',
@@ -514,8 +522,8 @@ const s = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.07, shadowRadius: 7, elevation: 2,
   },
-  tileSel:    { borderColor: 'rgba(168,126,82,0.30)', shadowOpacity: 0.12, shadowRadius: 10, elevation: 4 },
-  tileLbl:    { marginTop: 6, fontSize: 11, color: '#A09080', fontWeight: '500', letterSpacing: 0.3 },
+  tileSel:    { borderColor: 'rgba(168,126,82,0.35)', shadowOpacity: 0.13, shadowRadius: 10, elevation: 4 },
+  tileLbl:    { marginTop: 6, fontSize: 12, color: '#A09080', fontWeight: '500', letterSpacing: 0.3 },
   tileLblSel: { color: '#A07A52', fontWeight: '700' },
 
   /* ── Customize Card ── */
