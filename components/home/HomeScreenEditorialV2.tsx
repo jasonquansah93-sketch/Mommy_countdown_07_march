@@ -467,26 +467,26 @@ const s = StyleSheet.create({
   secTitle: { fontSize: 17, fontWeight: '600', color: '#4A3A2C', letterSpacing: -0.1 },
   secLine:  { flex: 1, height: 1, backgroundColor: 'rgba(100,80,60,0.14)', marginLeft: 10 },
 
-  /* ── TIME REMAINING — cycling big number ── */
+  /* ── TIME REMAINING — cycling number, editorial & light ── */
   remHead: {
     flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', marginBottom: 4,
+    alignItems: 'center', marginBottom: 6,
   },
   remTitle: {
-    fontSize: 11, fontWeight: '700', letterSpacing: 1.8,
-    color: '#8B7260', textTransform: 'uppercase',
+    fontSize: 10, fontWeight: '700', letterSpacing: 2.0,
+    color: '#A08C76', textTransform: 'uppercase',
   },
   remHint: {
-    fontSize: 12, color: '#B0997E', letterSpacing: 0.3,
+    fontSize: 11, color: '#B8A490', letterSpacing: 0.4,
   },
   remNum: {
-    fontSize: 96, lineHeight: 100, fontWeight: '700',
-    color: '#2C211A', letterSpacing: -3,
-    fontVariant: ['tabular-nums'],
+    fontSize: 64, lineHeight: 68, fontWeight: '300',
+    color: '#2C211A', letterSpacing: -1.5,
+    fontFamily: 'Georgia', fontVariant: ['tabular-nums'],
   },
   remUnit: {
-    fontSize: 22, fontWeight: '300', color: '#8B7260',
-    letterSpacing: 0.5, marginTop: 2, marginBottom: 4,
+    fontSize: 16, fontWeight: '300', color: '#9A8472',
+    letterSpacing: 1.2, marginTop: 4, marginBottom: 6,
     fontFamily: 'Georgia', fontStyle: 'italic',
   },
 
