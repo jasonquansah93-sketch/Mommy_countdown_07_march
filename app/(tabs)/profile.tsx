@@ -1,89 +1,50 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Switch,
-  Modal,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  Switch, Modal, TextInput, KeyboardAvoidingView,
+  Platform, Image,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useProfile } from '../../context/ProfileContext';
-import { useDesign } from '../../context/DesignContext';
 import { usePremium } from '../../context/PremiumContext';
 import { getDaysRemaining, formatDateLabel } from '../../utils/date';
 import { loadJSON, saveJSON } from '../../utils/storage';
-import ScreenBackground from '../../components/shared/ScreenBackground';
-import { SHADOW, RADIUS, GLASS } from '../../constants/tokens';
 
-// ─── Reminders persistence ───────────────────────────────────────────────────
+// ─── Reminders ───────────────────────────────────────────────────────────────
 const REMINDERS_KEY = 'mommy_reminders';
-interface RemindersState {
-  weekly: boolean;
-  milestones: boolean;
-}
+interface RemindersState { weekly: boolean; milestones: boolean }
 
-// ─── Premium feature list (copy-only, no new colors) ─────────────────────────
+// ─── Premium features list ────────────────────────────────────────────────────
 const PREMIUM_FEATURES = [
-  {
-    icon: 'water-outline',
-    title: 'Remove watermark from all shared memories',
-    subtitle: 'Share your precious moments beautifully',
-  },
-  {
-    icon: 'image-outline',
-    title: 'Export images in high-resolution quality',
-    subtitle: 'Perfect for printing and preserving',
-  },
-  {
-    icon: 'gift-outline',
-    title: 'Exclusive memory stickers & frames',
-    subtitle: 'Personalize your countdown journey',
-  },
-  {
-    icon: 'sparkles-outline',
-    title: 'Animated countdown cards',
-    subtitle: 'Watch your journey come to life',
-  },
-  {
-    icon: 'heart-outline',
-    title: 'Unlimited memories & milestones',
-    subtitle: 'Capture every special moment',
-  },
+  { icon: 'water-outline',    title: 'Remove watermark from shared memories',   sub: 'Share your precious moments beautifully' },
+  { icon: 'image-outline',    title: 'Export images in high-resolution quality', sub: 'Perfect for printing and preserving' },
+  { icon: 'gift-outline',     title: 'Exclusive memory stickers & frames',       sub: 'Personalise your countdown journey' },
+  { icon: 'sparkles-outline', title: 'Animated countdown cards',                 sub: 'Watch your journey come to life' },
+  { icon: 'heart-outline',    title: 'Unlimited memories & milestones',          sub: 'Capture every special moment' },
 ] as const;
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
+// ─── Shared row sub-components ────────────────────────────────────────────────
 interface ActiveRowProps {
   iconName: keyof typeof Ionicons.glyphMap;
-  iconBg: string;
-  iconColor: string;
-  label: string;
-  value: string;
-  isLast: boolean;
-  onPress: () => void;
+  label: string; value?: string; isLast: boolean; onPress: () => void;
 }
-function ActiveRow({ iconName, iconBg, iconColor, label, value, isLast, onPress }: ActiveRowProps) {
-  const { colors } = useDesign();
+function ActiveRow({ iconName, label, value, isLast, onPress }: ActiveRowProps) {
   return (
     <TouchableOpacity
-      style={[styles.listRow, !isLast && { borderBottomWidth: 1, borderBottomColor: colors.accent }]}
+      style={[s.listRow, !isLast && s.listRowBorder]}
       activeOpacity={0.6}
       onPress={onPress}
     >
-      <View style={[styles.rowIconCircle, { backgroundColor: iconBg }]}>
-        <Ionicons name={iconName} size={18} color={iconColor} />
+      <View style={s.rowIcon}>
+        <Ionicons name={iconName} size={17} color="#C09A72" />
       </View>
-      <Text style={[styles.rowLabel, { color: colors.text }]}>{label}</Text>
-      <View style={styles.rowRight}>
-        {value ? <Text style={[styles.rowValue, { color: colors.textSecondary }]}>{value}</Text> : null}
-        <Ionicons name="chevron-forward" size={16} color={colors.accent} style={{ marginLeft: 4 }} />
+      <Text style={s.rowLabel}>{label}</Text>
+      <View style={s.rowRight}>
+        {value ? <Text style={s.rowValue}>{value}</Text> : null}
+        <Ionicons name="chevron-forward" size={15} color="rgba(160,140,118,0.55)" style={{ marginLeft: 4 }} />
       </View>
     </TouchableOpacity>
   );
@@ -91,23 +52,18 @@ function ActiveRow({ iconName, iconBg, iconColor, label, value, isLast, onPress 
 
 interface DisabledRowProps {
   iconName: keyof typeof Ionicons.glyphMap;
-  iconBg: string;
-  iconColor: string;
-  label: string;
-  value: string;
-  isLast: boolean;
+  label: string; value?: string; isLast: boolean;
 }
-function DisabledRow({ iconName, iconBg, iconColor, label, value, isLast }: DisabledRowProps) {
-  const { colors } = useDesign();
+function DisabledRow({ iconName, label, value, isLast }: DisabledRowProps) {
   return (
-    <View style={[styles.listRow, !isLast && { borderBottomWidth: 1, borderBottomColor: colors.accent }]}>
-      <View style={[styles.rowIconCircle, { backgroundColor: iconBg }]}>
-        <Ionicons name={iconName} size={18} color={iconColor} />
+    <View style={[s.listRow, !isLast && s.listRowBorder]}>
+      <View style={s.rowIcon}>
+        <Ionicons name={iconName} size={17} color="rgba(192,154,114,0.55)" />
       </View>
-      <Text style={[styles.rowLabel, { color: colors.text }]}>{label}</Text>
-      <View style={styles.rowRight}>
-        {value ? <Text style={[styles.rowValue, { color: colors.textSecondary }]}>{value}</Text> : null}
-        <Ionicons name="chevron-forward" size={16} color={colors.accent} style={{ marginLeft: 4, opacity: 0.5 }} />
+      <Text style={[s.rowLabel, { opacity: 0.55 }]}>{label}</Text>
+      <View style={s.rowRight}>
+        {value ? <Text style={[s.rowValue, { opacity: 0.55 }]}>{value}</Text> : null}
+        <Ionicons name="chevron-forward" size={15} color="rgba(160,140,118,0.28)" style={{ marginLeft: 4 }} />
       </View>
     </View>
   );
@@ -115,37 +71,25 @@ function DisabledRow({ iconName, iconBg, iconColor, label, value, isLast }: Disa
 
 interface ReminderRowProps {
   iconName: keyof typeof Ionicons.glyphMap;
-  iconBg: string;
-  iconColor: string;
-  title: string;
-  subtitle: string;
-  value: boolean;
-  onToggle: () => void;
-  isLast: boolean;
-  accentColor: string;
+  title: string; subtitle: string;
+  value: boolean; onToggle: () => void; isLast: boolean;
 }
-function ReminderRow({
-  iconName, iconBg, iconColor,
-  title, subtitle,
-  value, onToggle, isLast,
-  accentColor,
-}: ReminderRowProps) {
-  const { colors } = useDesign();
+function ReminderRow({ iconName, title, subtitle, value, onToggle, isLast }: ReminderRowProps) {
   return (
-    <View style={[styles.listRow, !isLast && { borderBottomWidth: 1, borderBottomColor: colors.accent }]}>
-      <View style={[styles.rowIconCircle, { backgroundColor: iconBg }]}>
-        <Ionicons name={iconName} size={18} color={iconColor} />
+    <View style={[s.listRow, !isLast && s.listRowBorder]}>
+      <View style={s.rowIcon}>
+        <Ionicons name={iconName} size={17} color="#C09A72" />
       </View>
-      <View style={styles.reminderText}>
-        <Text style={[styles.reminderTitle, { color: colors.text }]}>{title}</Text>
-        <Text style={[styles.reminderSubtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={s.rowLabel}>{title}</Text>
+        <Text style={s.reminderSub}>{subtitle}</Text>
       </View>
       <Switch
         value={value}
         onValueChange={onToggle}
-        trackColor={{ false: colors.accent, true: accentColor }}
+        trackColor={{ false: 'rgba(180,155,125,0.25)', true: 'rgba(192,154,114,0.70)' }}
         thumbColor="#FFFFFF"
-        ios_backgroundColor={colors.accent}
+        ios_backgroundColor="rgba(180,155,125,0.25)"
       />
     </View>
   );
@@ -154,25 +98,22 @@ function ReminderRow({
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export default function ProfileScreen() {
   const { profile, updateProfile } = useProfile();
-  const { colors } = useDesign();
   const { isPremium, togglePremium } = usePremium();
-  const router = useRouter();
+  const router  = useRouter();
+  const insets  = useSafeAreaInsets();
 
-  // ── Reminders — persisted ──────────────────────────────────────────────────
-  const [remindersWeekly, setRemindersWeekly] = useState(true);
+  // ── Reminders ──────────────────────────────────────────────────────────────
+  const [remindersWeekly,     setRemindersWeekly]     = useState(true);
   const [remindersMilestones, setRemindersMilestones] = useState(true);
 
   useEffect(() => {
-    loadJSON<RemindersState>(REMINDERS_KEY).then((saved) => {
-      if (saved) {
-        setRemindersWeekly(saved.weekly);
-        setRemindersMilestones(saved.milestones);
-      }
+    loadJSON<RemindersState>(REMINDERS_KEY).then(saved => {
+      if (saved) { setRemindersWeekly(saved.weekly); setRemindersMilestones(saved.milestones); }
     });
   }, []);
 
   const toggleWeekly = useCallback(() => {
-    setRemindersWeekly((prev) => {
+    setRemindersWeekly(prev => {
       const next = !prev;
       saveJSON<RemindersState>(REMINDERS_KEY, { weekly: next, milestones: remindersMilestones });
       return next;
@@ -180,710 +121,500 @@ export default function ProfileScreen() {
   }, [remindersMilestones]);
 
   const toggleMilestones = useCallback(() => {
-    setRemindersMilestones((prev) => {
+    setRemindersMilestones(prev => {
       const next = !prev;
       saveJSON<RemindersState>(REMINDERS_KEY, { weekly: remindersWeekly, milestones: next });
       return next;
     });
   }, [remindersWeekly]);
 
-  // ── Baby name edit modal ───────────────────────────────────────────────────
+  // ── Baby name edit ─────────────────────────────────────────────────────────
   const [isEditingName, setIsEditingName] = useState(false);
-  const [nameInput, setNameInput] = useState('');
+  const [nameInput,     setNameInput]     = useState('');
 
-  const openNameEdit = () => {
-    setNameInput(profile.name || '');
-    setIsEditingName(true);
-  };
-
+  const openNameEdit = () => { setNameInput(profile.name || ''); setIsEditingName(true); };
   const saveNameEdit = () => {
     const trimmed = nameInput.trim();
     if (trimmed) updateProfile({ name: trimmed });
     setIsEditingName(false);
   };
 
-  // ── Derived values — same utilities as Countdown ──────────────────────────
+  // ── Derived values ─────────────────────────────────────────────────────────
   const daysLeft = getDaysRemaining(profile.dueDate);
   const babyName = profile.name || 'Baby';
 
-  // Due date pill text: "DUE MAR 28, 2026" — read-only, derived from global dueDate
   const dueDatePillText = (() => {
     const d = new Date(profile.dueDate);
     if (isNaN(d.getTime())) return 'DUE DATE';
-    const month = d.toLocaleString('en-US', { month: 'short' }).toUpperCase();
-    return `DUE ${month} ${d.getDate()}, ${d.getFullYear()}`;
+    return `DUE ${d.toLocaleString('en-US', { month: 'short' }).toUpperCase()} ${d.getDate()}, ${d.getFullYear()}`;
   })();
 
-  // Due date row value: "Mar 28, 2026" — read-only
   const dueDateRow = formatDateLabel(profile.dueDate);
 
-  // Gender stats
-  const genderSymbol =
-    profile.gender === 'boy' ? '♂' : profile.gender === 'girl' ? '♀' : '?';
-  const genderLabel =
-    profile.gender === 'boy' ? 'BOY' : profile.gender === 'girl' ? 'GIRL' : 'SURPRISE';
-  // Gender icon color follows theme, not hardcoded
-  const genderColor = colors.primary;
-
-  // Row icon colors derived from theme
-  const pillBg = colors.primary;
-  const iconPrimary = colors.primary;
-  const iconPrimaryBg = colors.background;
+  const genderSymbol = profile.gender === 'boy' ? '♂' : profile.gender === 'girl' ? '♀' : '?';
+  const genderLabel  = profile.gender === 'boy' ? 'BOY' : profile.gender === 'girl' ? 'GIRL' : 'SURPRISE';
 
   return (
-    <ScreenBackground>
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <View style={s.screen}>
+      {/* ── Botanical background ── */}
+      <Image
+        source={require('../../assets/images/floral-bg.png')}
+        style={StyleSheet.absoluteFillObject}
+        resizeMode="cover"
+      />
+
+      {/* ── Header ── */}
+      <View style={[s.header, { paddingTop: insets.top + 8 }]}>
+        <View style={s.hSpacer} />
+        <View style={s.headerCenter}>
+          <Text style={s.headerTitle}>
+            <Text style={s.headerTitleL}>My</Text>
+            <Text style={s.headerTitleB}> Profile</Text>
+          </Text>
+          <Text style={s.headerSub}>Your baby & preferences</Text>
+        </View>
+        <TouchableOpacity style={s.hBtn} onPress={openNameEdit} activeOpacity={0.8}>
+          <Ionicons name="pencil" size={16} color="#6B5C4D" />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        style={{ backgroundColor: 'transparent' }}
+        contentContainerStyle={[s.scrollContent, { paddingBottom: insets.bottom + 108 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Header ──────────────────────────────────────────────────────── */}
-        <View style={styles.header}>
-          <View>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
-            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Your baby &amp; preferences</Text>
-          </View>
-          {/* Edit button — opens Baby Name edit only */}
-          <TouchableOpacity
-            style={[styles.editBtn, { borderColor: colors.accent, backgroundColor: colors.surface }]}
-            onPress={openNameEdit}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="pencil" size={17} color={colors.primary} />
-          </TouchableOpacity>
-        </View>
 
-        {/* ── Profile Card ─────────────────────────────────────────────────── */}
-        <View style={[styles.profileCard, { backgroundColor: colors.surface }]}>
+        {/* ── Profile card ── */}
+        <View style={s.profileCard}>
+          <LinearGradient
+            colors={['rgba(253,247,239,0.97)', 'rgba(244,236,224,0.94)']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
           <TouchableOpacity onPress={openNameEdit} activeOpacity={0.7}>
-            <Text style={[styles.profileName, { color: colors.text }]}>{babyName}</Text>
+            <Text style={s.profileName}>{babyName}</Text>
           </TouchableOpacity>
-          <View style={[styles.duePill, { backgroundColor: pillBg }]}>
-            <Ionicons name="calendar-outline" size={11} color="#FFFFFF" style={{ marginRight: 5 }} />
-            <Text style={styles.duePillText}>{dueDatePillText}</Text>
+          <View style={s.duePill}>
+            <Ionicons name="calendar-outline" size={11} color="#FFF8EF" style={{ marginRight: 5 }} />
+            <Text style={s.duePillTxt}>{dueDatePillText}</Text>
           </View>
-          <View style={[styles.cardDivider, { backgroundColor: colors.accent }]} />
-          <View style={styles.statsRow}>
-            {profile.gender != null ? (
+          <View style={s.cardHairline} />
+          <View style={s.statsRow}>
+            {profile.gender != null && (
               <>
-                <View style={styles.statCol}>
-                  <Text style={[styles.statSymbol, { color: genderColor }]}>{genderSymbol}</Text>
-                  <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{genderLabel}</Text>
+                <View style={s.statCol}>
+                  <Text style={s.statSymbol}>{genderSymbol}</Text>
+                  <Text style={s.statLabel}>{genderLabel}</Text>
                 </View>
-                <View style={[styles.statSep, { backgroundColor: colors.accent }]} />
-                <View style={styles.statCol}>
-                  <Text style={[styles.statNumber, { color: colors.text }]}>{daysLeft}</Text>
-                  <Text style={[styles.statLabel, { color: colors.textSecondary }]}>DAYS LEFT</Text>
-                </View>
+                <View style={s.statSep} />
               </>
-            ) : (
-              <View style={styles.statCol}>
-                <Text style={[styles.statNumber, { color: colors.text }]}>{daysLeft}</Text>
-                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>DAYS LEFT</Text>
-              </View>
             )}
+            <View style={s.statCol}>
+              <Text style={s.statNumber}>{daysLeft}</Text>
+              <Text style={s.statLabel}>DAYS LEFT</Text>
+            </View>
           </View>
         </View>
 
-        {/* ── Baby Details ─────────────────────────────────────────────────── */}
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Baby Details</Text>
-        <View style={[styles.listCard, { backgroundColor: colors.surface }]}>
-          <ActiveRow
-            iconName="person-outline"
-            iconBg={colors.accent}
-            iconColor={colors.primary}
-            label="Baby Name"
-            value={babyName}
-            isLast={false}
-            onPress={openNameEdit}
+        {/* ── Baby Details ── */}
+        <Text style={s.sectionLabel}>BABY DETAILS</Text>
+        <View style={s.listCard}>
+          <LinearGradient
+            colors={['rgba(253,247,239,0.96)', 'rgba(244,236,224,0.92)']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
           />
-          <DisabledRow
-            iconName="calendar-outline"
-            iconBg={colors.accent}
-            iconColor={colors.textSecondary}
-            label="Due Date"
-            value={dueDateRow}
-            isLast={true}
-          />
+          <ActiveRow   iconName="person-outline"   label="Baby Name" value={babyName}    isLast={false} onPress={openNameEdit} />
+          <DisabledRow iconName="calendar-outline" label="Due Date"  value={dueDateRow}  isLast={true} />
         </View>
 
-        {/* ── Reminders ────────────────────────────────────────────────────── */}
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Reminders</Text>
-        <View style={[styles.listCard, { backgroundColor: colors.surface }]}>
+        {/* ── Reminders ── */}
+        <Text style={s.sectionLabel}>REMINDERS</Text>
+        <View style={s.listCard}>
+          <LinearGradient
+            colors={['rgba(253,247,239,0.96)', 'rgba(244,236,224,0.92)']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
           <ReminderRow
             iconName="notifications-outline"
-            iconBg={iconPrimaryBg}
-            iconColor={iconPrimary}
-            title="Weekly Update"
-            subtitle="New week notification"
-            value={remindersWeekly}
-            onToggle={toggleWeekly}
-            isLast={false}
-            accentColor={colors.primary}
+            title="Weekly Update" subtitle="New week notification"
+            value={remindersWeekly} onToggle={toggleWeekly} isLast={false}
           />
           <ReminderRow
             iconName="star-outline"
-            iconBg={iconPrimaryBg}
-            iconColor={iconPrimary}
-            title="Milestones"
-            subtitle="Special days &amp; moments"
-            value={remindersMilestones}
-            onToggle={toggleMilestones}
-            isLast={true}
-            accentColor={colors.primary}
+            title="Milestones" subtitle="Special days & moments"
+            value={remindersMilestones} onToggle={toggleMilestones} isLast={true}
           />
         </View>
 
-        {/* ── Premium ──────────────────────────────────────────────────────── */}
-        <View style={styles.premiumHeaderRow}>
-          <Text style={styles.sectionTitle}>Premium</Text>
-          <View style={[styles.plusBadge, { backgroundColor: isPremium ? '#34C759' : colors.primary }]}>
-            <Text style={styles.plusBadgeText}>{isPremium ? 'ACTIVE' : 'PLUS'}</Text>
+        {/* ── Premium ── */}
+        <View style={s.premiumHeaderRow}>
+          <Text style={s.sectionLabel}>PREMIUM</Text>
+          <View style={[s.plusBadge, { backgroundColor: isPremium ? '#6BAA8A' : '#C09A72' }]}>
+            <Text style={s.plusBadgeTxt}>{isPremium ? 'ACTIVE' : 'PLUS'}</Text>
           </View>
         </View>
 
         {isPremium ? (
-          <View style={[styles.premiumActiveCard, { backgroundColor: colors.surface }]}>
-            <View style={styles.premiumTopRow}>
-              <View style={[styles.premiumIconCircle, { backgroundColor: colors.accent }]}>
-                <Ionicons name="checkmark-circle" size={24} color="#34C759" />
+          <View style={s.listCard}>
+            <LinearGradient
+              colors={['rgba(253,247,239,0.96)', 'rgba(244,236,224,0.92)']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFillObject}
+            />
+            <View style={s.premiumTopRow}>
+              <View style={[s.premiumIconCircle, { backgroundColor: 'rgba(107,170,138,0.16)' }]}>
+                <Ionicons name="checkmark-circle" size={24} color="#6BAA8A" />
               </View>
               <View style={{ flex: 1, marginLeft: 14 }}>
-                <Text style={[styles.premiumCardTitle, { color: colors.text }]}>MommyCount Plus Active</Text>
-                <Text style={[styles.premiumCardSubtitle, { color: colors.textSecondary }]}>All features unlocked</Text>
+                <Text style={s.premiumCardTitle}>MommyCount Plus Active</Text>
+                <Text style={s.premiumCardSub}>All features unlocked</Text>
               </View>
             </View>
             <TouchableOpacity
-              style={[styles.manageBtn, { borderColor: colors.accent }]}
+              style={s.manageBtn}
               activeOpacity={0.7}
               onPress={togglePremium}
             >
-              <Text style={[styles.manageBtnText, { color: colors.textSecondary }]}>
-                Manage Subscription
-              </Text>
+              <Text style={s.manageBtnTxt}>Manage Subscription</Text>
             </TouchableOpacity>
           </View>
         ) : (
-          <View style={[styles.premiumCard, { backgroundColor: colors.surface }]}>
-            <View style={styles.premiumTopRow}>
-              <View style={[styles.premiumIconCircle, { backgroundColor: colors.accent }]}>
-                <Ionicons name="heart" size={22} color={colors.primary} />
+          <View style={s.listCard}>
+            <LinearGradient
+              colors={['rgba(253,247,239,0.96)', 'rgba(244,236,224,0.92)']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFillObject}
+            />
+            <View style={s.premiumTopRow}>
+              <View style={s.premiumIconCircle}>
+                <Ionicons name="heart" size={22} color="#C09A72" />
               </View>
               <View style={{ flex: 1, marginLeft: 14 }}>
-                <Text style={[styles.premiumCardTitle, { color: colors.text }]}>MommyCount Plus</Text>
-                <Text style={[styles.premiumCardSubtitle, { color: colors.textSecondary }]}>Make every memory perfect</Text>
+                <Text style={s.premiumCardTitle}>MommyCount Plus</Text>
+                <Text style={s.premiumCardSub}>Make every memory perfect</Text>
               </View>
             </View>
 
             {PREMIUM_FEATURES.map((f, i) => (
-              <View key={i} style={styles.featureRow}>
-                <View style={[styles.featureIconCircle, { backgroundColor: colors.accent }]}>
-                  <Ionicons
-                    name={f.icon as keyof typeof Ionicons.glyphMap}
-                    size={16}
-                    color={colors.primary}
-                  />
+              <View key={i} style={s.featureRow}>
+                <View style={s.featureIconCircle}>
+                  <Ionicons name={f.icon as keyof typeof Ionicons.glyphMap} size={15} color="#C09A72" />
                 </View>
                 <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={[styles.featureTitle, { color: colors.text }]}>{f.title}</Text>
-                  <Text style={[styles.featureSubtitle, { color: colors.textSecondary }]}>{f.subtitle}</Text>
+                  <Text style={s.featureTitle}>{f.title}</Text>
+                  <Text style={s.featureSub}>{f.sub}</Text>
                 </View>
               </View>
             ))}
 
-            <TouchableOpacity
-              style={[styles.ctaButton, { backgroundColor: colors.primary }]}
-              activeOpacity={0.85}
-              onPress={() => router.push('/modal/paywall')}
-            >
-              <Text style={styles.ctaText}>Unlock Perfect Memories</Text>
-            </TouchableOpacity>
-            <Text style={[styles.ctaNote, { color: colors.textSecondary }]}>$4.99 / year  •  Cancel anytime</Text>
+            <View style={s.ctaWrap}>
+              <LinearGradient
+                colors={['#C09A72', '#A87E52']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={StyleSheet.absoluteFillObject}
+              />
+              <TouchableOpacity
+                style={s.ctaInner}
+                onPress={() => router.push('/modal/paywall')}
+                activeOpacity={0.85}
+              >
+                <Text style={s.ctaTxt}>Unlock Perfect Memories</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={s.ctaNote}>$4.99 / year  •  Cancel anytime</Text>
           </View>
         )}
 
-        {/* ── App Settings ─────────────────────────────────────────────────── */}
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>App Settings</Text>
-        <View style={[styles.listCard, { backgroundColor: colors.surface }]}>
-          <ActiveRow
-            iconName="globe-outline"
-            iconBg={colors.accent}
-            iconColor={colors.primary}
-            label="Language"
-            value="English"
-            isLast={false}
-            onPress={() => {}}
+        {/* ── App Settings ── */}
+        <Text style={s.sectionLabel}>APP SETTINGS</Text>
+        <View style={s.listCard}>
+          <LinearGradient
+            colors={['rgba(253,247,239,0.96)', 'rgba(244,236,224,0.92)']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
           />
-          <ActiveRow
-            iconName="moon-outline"
-            iconBg={colors.accent}
-            iconColor={colors.primary}
-            label="Ambient Mode"
-            value={isPremium ? '' : '✦ Plus'}
-            isLast={false}
-            onPress={() => {
-              if (isPremium) {
-                router.push('/modal/ambient');
-              } else {
-                router.push('/modal/paywall');
-              }
-            }}
-          />
-          <ActiveRow
-            iconName="share-social-outline"
-            iconBg={colors.accent}
-            iconColor={colors.primary}
-            label="Share App"
-            value=""
-            isLast={false}
-            onPress={() => {}}
-          />
-          <ActiveRow
-            iconName="star-outline"
-            iconBg={colors.accent}
-            iconColor={colors.primary}
-            label="Rate Us"
-            value=""
-            isLast={true}
-            onPress={() => {}}
-          />
+          <ActiveRow iconName="globe-outline"        label="Language"     value="English"                    isLast={false} onPress={() => {}} />
+          <ActiveRow iconName="moon-outline"          label="Ambient Mode" value={isPremium ? '' : '✦ Plus'}  isLast={false}
+            onPress={() => router.push(isPremium ? '/modal/ambient' : '/modal/paywall')} />
+          <ActiveRow iconName="share-social-outline"  label="Share App"    value=""                           isLast={false} onPress={() => {}} />
+          <ActiveRow iconName="star-outline"          label="Rate Us"      value=""                           isLast={true}  onPress={() => {}} />
         </View>
 
-        {/* ── Footer ───────────────────────────────────────────────────────── */}
-        <View style={styles.footer}>
-          <View style={styles.footerLinks}>
-            <TouchableOpacity>
-              <Text style={[styles.footerLink, { color: colors.textSecondary }]}>Privacy Policy</Text>
-            </TouchableOpacity>
-            <Text style={[styles.footerDot, { color: colors.accent }]}>  •  </Text>
-            <TouchableOpacity>
-              <Text style={[styles.footerLink, { color: colors.textSecondary }]}>Terms of Use</Text>
-            </TouchableOpacity>
-            <Text style={[styles.footerDot, { color: colors.accent }]}>  •  </Text>
-            <TouchableOpacity>
-              <Text style={[styles.footerLink, { color: colors.textSecondary }]}>Support</Text>
-            </TouchableOpacity>
+        {/* ── Footer ── */}
+        <View style={s.footer}>
+          <View style={s.footerLinks}>
+            <TouchableOpacity><Text style={s.footerLink}>Privacy Policy</Text></TouchableOpacity>
+            <Text style={s.footerDot}>  ·  </Text>
+            <TouchableOpacity><Text style={s.footerLink}>Terms of Use</Text></TouchableOpacity>
+            <Text style={s.footerDot}>  ·  </Text>
+            <TouchableOpacity><Text style={s.footerLink}>Support</Text></TouchableOpacity>
           </View>
           {!isPremium && (
-            <TouchableOpacity
-              onPress={() => router.push('/modal/paywall')}
-              style={{ marginBottom: 6 }}
-            >
-              <Text style={styles.restoreLink}>Restore Purchase</Text>
+            <TouchableOpacity onPress={() => router.push('/modal/paywall')} style={{ marginBottom: 6 }}>
+              <Text style={s.restoreLink}>Restore Purchase</Text>
             </TouchableOpacity>
           )}
-          <Text style={[styles.footerVersion, { color: colors.textSecondary }]}>Version 2.4.0 • Made with ♡ for moms</Text>
+          <Text style={s.footerVersion}>Version 2.4.0  •  Made with ♡ for moms</Text>
         </View>
+
       </ScrollView>
 
-      {/* ── Baby Name Edit Modal ──────────────────────────────────────────── */}
+      {/* ── Baby Name Edit Modal ── */}
       <Modal visible={isEditingName} transparent animationType="fade">
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalOverlay}
+          style={s.modalOverlay}
         >
           <TouchableOpacity
-            style={styles.modalBackdrop}
+            style={StyleSheet.absoluteFillObject}
             activeOpacity={1}
             onPress={() => setIsEditingName(false)}
-          />
-          <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Edit Baby Name</Text>
+          >
+            <View style={[StyleSheet.absoluteFillObject, s.modalBackdrop]} />
+          </TouchableOpacity>
+
+          <View style={s.modalCard}>
+            <LinearGradient
+              colors={['rgba(253,247,239,0.99)', 'rgba(244,236,224,0.98)']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFillObject}
+            />
+            <Text style={s.modalTitle}>Baby's Name</Text>
             <TextInput
-              style={[styles.nameInput, { borderColor: colors.accent, color: colors.text, backgroundColor: colors.background }]}
+              style={s.nameInput}
               value={nameInput}
               onChangeText={setNameInput}
               placeholder="Enter baby name"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor="rgba(160,140,118,0.60)"
               autoFocus
               selectTextOnFocus
               returnKeyType="done"
               onSubmitEditing={saveNameEdit}
               maxLength={40}
             />
-            <TouchableOpacity
-              style={[styles.modalDoneBtn, { backgroundColor: colors.primary }]}
-              onPress={saveNameEdit}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.modalDoneBtnText}>Save</Text>
-            </TouchableOpacity>
+            <View style={s.modalBtnWrap}>
+              <LinearGradient
+                colors={['#C09A72', '#A87E52']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={StyleSheet.absoluteFillObject}
+              />
+              <TouchableOpacity style={s.modalBtnInner} onPress={saveNameEdit} activeOpacity={0.85}>
+                <Text style={s.modalBtnTxt}>Save</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </SafeAreaView>
-    </ScreenBackground>
+    </View>
   );
 }
 
-// ─── Styles ──────────────────────────────────────────────────────────────────
-const CARD_RADIUS = RADIUS.card;
-const CARD_SHADOW = SHADOW.card;
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const s = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: '#E8D8C4' },
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: 'transparent' },
-  scroll: { flex: 1 },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 100,
-  },
-
-  // Header
+  /* ── Header ── */
   header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    paddingTop: 12,
-    paddingBottom: 16,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 20, paddingBottom: 14,
   },
-  headerTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#1a1a1a',
-    letterSpacing: -0.3,
+  hSpacer: { width: 36, height: 36 },
+  headerCenter: { flex: 1, alignItems: 'center' },
+  headerTitle: { fontSize: 20, letterSpacing: -0.3 },
+  headerTitleL: { color: '#A09282', fontWeight: '300' },
+  headerTitleB: { color: '#2C211A', fontWeight: '700' },
+  headerSub: {
+    fontSize: 11, color: '#A08C76', letterSpacing: 0.8,
+    marginTop: 2, fontFamily: 'Georgia', fontStyle: 'italic',
   },
-  headerSubtitle: {
-    fontSize: 13,
-    color: '#888888',
-    marginTop: 2,
-  },
-  editBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: GLASS.surface,
-    marginTop: 2,
-    ...GLASS.shadowSubtle,
+  hBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.78)',
+    alignItems: 'center', justifyContent: 'center',
   },
 
-  // Profile Card
+  /* ── Scroll ── */
+  scrollContent: { paddingHorizontal: 16, paddingTop: 4 },
+
+  /* ── Section label ── */
+  sectionLabel: {
+    fontSize: 10, fontWeight: '700', letterSpacing: 2.0,
+    color: '#A08C76', marginBottom: 10, marginTop: 4,
+  },
+
+  /* ── Profile card ── */
   profileCard: {
-    backgroundColor: GLASS.surface,
-    borderWidth: 1,
-    borderColor: GLASS.border,
-    borderRadius: CARD_RADIUS,
+    borderRadius: 20, overflow: 'hidden', position: 'relative',
     alignItems: 'center',
-    paddingTop: 28,
-    paddingBottom: 20,
-    paddingHorizontal: 16,
-    marginBottom: 24,
-    ...GLASS.shadow,
+    paddingTop: 28, paddingBottom: 22, paddingHorizontal: 16,
+    marginBottom: 28,
+    borderWidth: 1, borderColor: 'rgba(180,155,125,0.20)',
+    shadowColor: '#7A5E3C',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.09, shadowRadius: 10, elevation: 3,
   },
   profileName: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 8,
+    fontSize: 28, fontWeight: '300', color: '#2C211A',
+    fontFamily: 'Georgia', fontStyle: 'italic',
+    letterSpacing: -0.5, marginBottom: 10,
   },
   duePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginBottom: 16,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 14, paddingVertical: 7,
+    borderRadius: 20, backgroundColor: '#C09A72',
+    marginBottom: 18,
   },
-  duePillText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  cardDivider: {
-    width: '100%',
-    height: 1,
-    backgroundColor: '#F0F0F0',
-    marginBottom: 16,
+  duePillTxt: { color: '#FFF8EF', fontSize: 11, fontWeight: '700', letterSpacing: 0.6 },
+  cardHairline: {
+    width: '100%', height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(120,90,60,0.20)', marginBottom: 18,
   },
   statsRow: {
-    flexDirection: 'row',
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: 'row', width: '100%',
+    alignItems: 'center', justifyContent: 'center',
   },
-  statCol: {
-    flex: 1,
-    alignItems: 'center',
-  },
+  statCol: { flex: 1, alignItems: 'center' },
   statSep: {
-    width: 1,
-    height: 32,
-    backgroundColor: '#EBEBEB',
+    width: StyleSheet.hairlineWidth, height: 36,
+    backgroundColor: 'rgba(120,90,60,0.22)',
   },
   statNumber: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#1a1a1a',
-    lineHeight: 34,
+    fontSize: 34, fontWeight: '300', color: '#2C211A',
+    fontFamily: 'Georgia', letterSpacing: -1, lineHeight: 40,
   },
   statSymbol: {
-    fontSize: 26,
-    fontWeight: '700',
-    lineHeight: 34,
+    fontSize: 30, fontWeight: '300', color: '#C09A72',
+    fontFamily: 'Georgia', lineHeight: 38,
   },
   statLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#AAAAAA',
-    letterSpacing: 0.8,
-    marginTop: 2,
+    fontSize: 10, fontWeight: '700', color: '#A08C76',
+    letterSpacing: 1.4, marginTop: 2,
   },
 
-  // Section title
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 10,
-  },
-
-  // List card
+  /* ── List card ── */
   listCard: {
-    backgroundColor: GLASS.surface,
-    borderWidth: 1,
-    borderColor: GLASS.border,
-    borderRadius: CARD_RADIUS,
+    borderRadius: 16, overflow: 'hidden', position: 'relative',
     marginBottom: 24,
-    overflow: 'hidden',
-    ...GLASS.shadow,
+    borderWidth: 1, borderColor: 'rgba(180,155,125,0.20)',
+    shadowColor: '#7A5E3C',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.07, shadowRadius: 8, elevation: 2,
   },
   listRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 15,
   },
   listRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#F4F4F4',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(120,90,60,0.18)',
   },
-  rowIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
+  rowIcon: {
+    width: 34, height: 34, borderRadius: 17,
+    backgroundColor: 'rgba(192,154,114,0.14)',
+    alignItems: 'center', justifyContent: 'center',
     marginRight: 12,
   },
-  rowLabel: {
-    flex: 1,
-    fontSize: 15,
-    color: '#1a1a1a',
-    fontWeight: '500',
-  },
-  rowRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rowValue: {
-    fontSize: 14,
-    color: '#888888',
-  },
+  rowLabel: { flex: 1, fontSize: 15, fontWeight: '500', color: '#2C211A' },
+  rowRight: { flexDirection: 'row', alignItems: 'center' },
+  rowValue: { fontSize: 14, color: '#9A8472' },
+  reminderSub: { fontSize: 12, color: '#9A8472', marginTop: 1 },
 
-  // Reminder rows
-  reminderText: { flex: 1 },
-  reminderTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
-  reminderSubtitle: {
-    fontSize: 12,
-    color: '#AAAAAA',
-    marginTop: 1,
-  },
-
-  // Premium
+  /* ── Premium header row ── */
   premiumHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    gap: 10,
+    flexDirection: 'row', alignItems: 'center',
+    gap: 10, marginBottom: 10, marginTop: 4,
   },
   plusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 10,
+    paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10,
   },
-  plusBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  premiumCard: {
-    borderRadius: CARD_RADIUS,
-    padding: 18,
-    marginBottom: 24,
-    backgroundColor: GLASS.surface,
-    borderWidth: 1,
-    borderColor: GLASS.border,
-    ...GLASS.shadow,
-  },
+  plusBadgeTxt: { color: '#FFF8EF', fontSize: 10, fontWeight: '800', letterSpacing: 0.6 },
+
+  /* ── Premium card internals ── */
   premiumTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingTop: 18, marginBottom: 16,
   },
   premiumIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 46, height: 46, borderRadius: 23,
+    backgroundColor: 'rgba(192,154,114,0.16)',
+    alignItems: 'center', justifyContent: 'center',
   },
-  premiumCardTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#1a1a1a',
-  },
-  premiumCardSubtitle: {
-    fontSize: 13,
-    color: '#888888',
-    marginTop: 2,
-  },
+  premiumCardTitle: { fontSize: 16, fontWeight: '700', color: '#2C211A' },
+  premiumCardSub:   { fontSize: 13, color: '#9A8472', marginTop: 2 },
+
   featureRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 14,
+    flexDirection: 'row', alignItems: 'flex-start',
+    paddingHorizontal: 16, marginBottom: 14,
   },
   featureIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: 'rgba(192,154,114,0.14)',
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
-  featureTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    lineHeight: 20,
+  featureTitle: { fontSize: 14, fontWeight: '600', color: '#2C211A', lineHeight: 20 },
+  featureSub:   { fontSize: 12, color: '#9A8472', lineHeight: 17 },
+
+  ctaWrap: {
+    overflow: 'hidden', borderRadius: 14, position: 'relative',
+    marginHorizontal: 16, marginTop: 4, marginBottom: 10,
   },
-  featureSubtitle: {
-    fontSize: 12,
-    color: '#AAAAAA',
-    lineHeight: 17,
-  },
-  ctaButton: {
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 4,
-    marginBottom: 10,
-  },
-  ctaText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  ctaNote: {
-    textAlign: 'center',
-    fontSize: 12,
-    color: '#AAAAAA',
-  },
-  premiumActiveCard: {
-    borderRadius: CARD_RADIUS,
-    padding: 18,
-    marginBottom: 24,
-    backgroundColor: GLASS.surface,
-    borderWidth: 1,
-    borderColor: GLASS.border,
-    ...GLASS.shadow,
-  },
-  manageBtn: {
-    marginTop: 12,
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  manageBtnText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  restoreLink: {
-    fontSize: 12,
-    color: '#AAAAAA',
-    fontWeight: '500',
-    textDecorationLine: 'underline',
-    marginBottom: 4,
+  ctaInner: { paddingVertical: 16, alignItems: 'center' },
+  ctaTxt:   { color: '#FFF8EF', fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
+  ctaNote:  {
+    textAlign: 'center', fontSize: 12, color: '#9A8472',
+    paddingBottom: 18,
   },
 
-  // Footer
-  footer: {
+  manageBtn: {
+    marginHorizontal: 16, marginTop: 4, marginBottom: 18,
+    paddingVertical: 12, borderRadius: 12,
+    borderWidth: 1, borderColor: 'rgba(168,126,82,0.30)',
     alignItems: 'center',
-    paddingVertical: 16,
   },
-  footerLinks: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  footerLink: {
-    fontSize: 12,
-    color: '#888888',
-    fontWeight: '500',
-  },
-  footerDot: {
-    fontSize: 12,
-    color: '#CCCCCC',
+  manageBtnTxt: { fontSize: 14, fontWeight: '500', color: '#9A8472' },
+
+  /* ── Footer ── */
+  footer: { alignItems: 'center', paddingVertical: 16 },
+  footerLinks: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  footerLink:    { fontSize: 12, color: '#9A8472', fontWeight: '500' },
+  footerDot:     { fontSize: 12, color: 'rgba(160,140,118,0.55)' },
+  restoreLink: {
+    fontSize: 12, color: '#B0997E',
+    textDecorationLine: 'underline', marginBottom: 6,
   },
   footerVersion: {
-    fontSize: 12,
-    color: '#BBBBBB',
+    fontSize: 11, color: 'rgba(160,140,118,0.65)',
+    fontFamily: 'Georgia', fontStyle: 'italic',
   },
 
-  // Name edit modal
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
+  /* ── Name edit modal ── */
+  modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  modalBackdrop: { backgroundColor: 'rgba(44,33,26,0.50)' },
   modalCard: {
-    borderRadius: 20,
-    padding: 24,
-    width: '85%',
-    backgroundColor: GLASS.surface,
-    borderWidth: 1,
-    borderColor: GLASS.borderStrong,
-    ...GLASS.shadow,
+    borderRadius: 22, overflow: 'hidden', position: 'relative',
+    padding: 24, width: '85%',
+    borderWidth: 1, borderColor: 'rgba(168,126,82,0.25)',
+    shadowColor: '#7A5E3C',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15, shadowRadius: 20, elevation: 10,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 16,
-    textAlign: 'center',
-    color: '#1a1a1a',
+    fontSize: 18, fontWeight: '600', color: '#2C211A',
+    fontFamily: 'Georgia', fontStyle: 'italic',
+    textAlign: 'center', marginBottom: 16,
   },
   nameInput: {
-    borderWidth: 1.5,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 17,
-    color: '#1a1a1a',
-    marginBottom: 16,
-    textAlign: 'center',
+    borderWidth: 1.5, borderRadius: 12, borderColor: 'rgba(168,126,82,0.35)',
+    paddingHorizontal: 16, paddingVertical: 14,
+    fontSize: 17, color: '#2C211A',
+    backgroundColor: 'rgba(255,255,255,0.60)',
+    marginBottom: 16, textAlign: 'center',
   },
-  modalDoneBtn: {
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
+  modalBtnWrap: {
+    overflow: 'hidden', borderRadius: 12, position: 'relative',
   },
-  modalDoneBtnText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  modalBtnInner: { paddingVertical: 14, alignItems: 'center' },
+  modalBtnTxt:   { color: '#FFF8EF', fontSize: 16, fontWeight: '700' },
 });
