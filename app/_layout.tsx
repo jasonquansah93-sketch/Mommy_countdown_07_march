@@ -1,24 +1,37 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, AppState } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import { Asset } from 'expo-asset';
 import { useAppFonts } from '../hooks/useAppFonts';
 import { AppProvider } from '../context/AppProvider';
 import { heartbeatPulse } from '../utils/haptics';
 
 SplashScreen.preventAutoHideAsync();
 
+// Pre-resolve the require() so Metro bundles it at build time
+const PRELOAD_ASSETS = [require('../assets/images/floral-bg.png')];
+
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useAppFonts();
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
 
+  // Load the floral background into memory before the splash hides
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    Asset.loadAsync(PRELOAD_ASSETS)
+      .catch(() => {/* fail gracefully — image just loads normally */})
+      .finally(() => setAssetsLoaded(true));
+  }, []);
+
+  // Hide splash only when BOTH fonts and image are ready
+  useEffect(() => {
+    if ((fontsLoaded || fontError) && assetsLoaded) {
       SplashScreen.hideAsync();
       // Heartbeat on initial launch
       heartbeatPulse();
     }
-  }, [fontsLoaded, fontError]);
+  }, [fontsLoaded, fontError, assetsLoaded]);
 
   useEffect(() => {
     // Heartbeat every time app comes to foreground
@@ -28,12 +41,9 @@ export default function RootLayout() {
     return () => sub.remove();
   }, []);
 
-  if (!fontsLoaded && !fontError) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF' }}>
-        <ActivityIndicator size="large" color="#E91E8C" />
-      </View>
-    );
+  if ((!fontsLoaded && !fontError) || !assetsLoaded) {
+    // SplashScreen is still visible at this point — this view is never seen
+    return <View style={{ flex: 1, backgroundColor: '#E8D8C4' }} />;
   }
 
   return (
