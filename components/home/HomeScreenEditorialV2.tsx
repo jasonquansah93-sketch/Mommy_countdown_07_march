@@ -8,7 +8,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useProfile } from '../../context/ProfileContext';
+import { usePregnancy } from '../../context/PregnancyContext';
 import { usePremium } from '../../context/PremiumContext';
+import DatePickerModal from '../DatePickerModal';
 
 const { width: SW } = Dimensions.get('window');
 const H_PAD = 20;
@@ -74,7 +76,32 @@ export default function HomeScreenEditorialV2() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { profile, updateProfile } = useProfile();
+  const { updateCurrentPregnancy } = usePregnancy();
   const { isPremium } = usePremium();
+
+  // ── Date editing (Start / Due) ─────────────────────────────────────────────
+  const [editingDate, setEditingDate] = useState<'start' | 'due' | null>(null);
+  const [tempDate,    setTempDate]    = useState(new Date());
+
+  const openStartPicker = () => {
+    setTempDate(new Date(startDate));
+    setEditingDate('start');
+  };
+  const openDuePicker = () => {
+    setTempDate(new Date(dueDate));
+    setEditingDate('due');
+  };
+  const confirmDate = () => {
+    const iso = tempDate.toISOString();
+    if (editingDate === 'start') {
+      updateProfile({ startDate: iso });
+      updateCurrentPregnancy({ startDate: iso });
+    } else {
+      updateProfile({ dueDate: iso });
+      updateCurrentPregnancy({ dueDate: iso });
+    }
+    setEditingDate(null);
+  };
 
   const dueDate = useMemo(() => {
     if (profile?.dueDate) return profile.dueDate;
@@ -261,7 +288,10 @@ export default function HomeScreenEditorialV2() {
             style={StyleSheet.absoluteFillObject}
           />
           <View style={s.progTop}>
-            <Text style={s.progDate}>Start  {fmt(startDate)}</Text>
+            <TouchableOpacity onPress={openStartPicker} activeOpacity={0.6} style={s.progDateBtn}>
+              <Text style={s.progDate}>Start  {fmt(startDate)}</Text>
+              <Ionicons name="pencil" size={11} color="rgba(90,74,56,0.40)" style={{ marginLeft: 5 }} />
+            </TouchableOpacity>
             <Text style={s.progPct}>{pct}%</Text>
           </View>
           <View style={s.progTrack}>
@@ -271,7 +301,10 @@ export default function HomeScreenEditorialV2() {
               style={[s.progFill, { width: `${pct}%` as any }]}
             />
           </View>
-          <Text style={s.progDateBot}>Due  {fmt(dueDate)}</Text>
+          <TouchableOpacity onPress={openDuePicker} activeOpacity={0.6} style={s.progDateBtn}>
+            <Text style={s.progDateBot}>Due  {fmt(dueDate)}</Text>
+            <Ionicons name="pencil" size={11} color="rgba(90,74,56,0.40)" style={{ marginLeft: 5 }} />
+          </TouchableOpacity>
 
           {/* ── Memory nudge — subtil, kein Premium-Lock ── */}
           <View style={s.progMemoryRow}>
@@ -402,6 +435,18 @@ export default function HomeScreenEditorialV2() {
         </View>
 
       </ScrollView>
+
+      {/* ── Date Picker (Start / Due) ── */}
+      <DatePickerModal
+        visible={editingDate !== null}
+        title={editingDate === 'start' ? 'Select Start Date' : 'Select Due Date'}
+        value={tempDate}
+        onChange={setTempDate}
+        onConfirm={confirmDate}
+        onCancel={() => setEditingDate(null)}
+        maximumDate={editingDate === 'start' ? new Date() : undefined}
+        minimumDate={editingDate === 'due'   ? new Date() : undefined}
+      />
     </View>
   );
 }
@@ -554,6 +599,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'baseline', marginBottom: 10,
   },
+  progDateBtn: { flexDirection: 'row', alignItems: 'center' },
   progDate:    { fontSize: 14, color: '#5A4A38', fontWeight: '500', letterSpacing: 0.1 },
   progPct:     { fontSize: 24, color: '#5A4A38', fontWeight: '600' },
   progTrack:   { height: 6, borderRadius: 3, backgroundColor: 'rgba(120,95,70,0.16)', overflow: 'hidden' },
