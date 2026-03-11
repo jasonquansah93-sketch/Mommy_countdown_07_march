@@ -140,4 +140,45 @@ export const THEMES: AppTheme[] = [
       accent: '#E8E2D9',
     },
   },
+
+  // ── Premium-exclusive themes ────────────────────────────────────────────
+  {
+    id: 'pearl',
+    name: 'Pearl',
+    colors: {
+      primary: '#B49BAC',
+      secondary: '#CAB8C3',
+      background: '#F9F7F8',
+      surface: '#FFFFFF',
+      text: '#2C2428',
+      textSecondary: '#9A8890',
+      accent: '#EEEAEC',
+    },
+  },
+  {
+    id: 'moonrise',
+    name: 'Moonrise',
+    colors: {
+      primary: '#617D8A',
+      secondary: '#8BA4B0',
+      background: '#F3F6F7',
+      surface: '#FFFFFF',
+      text: '#1E2A30',
+      textSecondary: '#70899A',
+      accent: '#D8E4EA',
+    },
+  },
+  {
+    id: 'terracotta',
+    name: 'Terracotta',
+    colors: {
+      primary: '#BE6B50',
+      secondary: '#D48F78',
+      background: '#FAF2EE',
+      surface: '#FFFFFF',
+      text: '#2E1E18',
+      textSecondary: '#A07060',
+      accent: '#F0DDD6',
+    },
+  },
 ];

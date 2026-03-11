@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useDesign } from '../../context/DesignContext';
+import { usePremium } from '../../context/PremiumContext';
+import { useRouter } from 'expo-router';
 import { THEMES } from '../../constants/themes';
 import type { TextColorMode } from '../../types';
 
@@ -30,8 +32,9 @@ function isLightSwatch(hex: string) {
   return ['#ffffff','#f5f5f5','#e0e0e0','#999999','#d4cfc8'].includes(hex.toLowerCase());
 }
 
-const PRESET_THEME_IDS = ['boy', 'girl', 'surprise', 'basic'];
-const COLOR_THEME_IDS  = ['rose', 'lavender', 'ocean', 'sage', 'sunset'];
+const PRESET_THEME_IDS  = ['boy', 'girl', 'surprise', 'basic'];
+const COLOR_THEME_IDS   = ['rose', 'lavender', 'ocean', 'sage', 'sunset'];
+const PREMIUM_THEME_IDS = ['pearl', 'moonrise', 'terracotta'];
 
 const COLOR_SHADES: Record<string, string[]> = {
   rose:     ['#FFB6D9','#FF8BBF','#E91E8C','#C91A76','#A01560','#FF6FB7','#FF9FCC'],
@@ -79,6 +82,8 @@ function ShadePicker({ visible, themeName, shades, currentColor, onSelect, onClo
 
 export default function ColorsTab() {
   const { design, setTheme, setCustomColor, setTextColorMode, setCustomTextColor } = useDesign();
+  const { isPremium } = usePremium();
+  const router = useRouter();
   const [shadeVisible, setShadeVisible]       = useState(false);
   const [selectedTheme, setSelectedTheme]     = useState<typeof THEMES[0] | null>(null);
   const [textExpanded, setTextExpanded]        = useState(false);
@@ -90,8 +95,9 @@ export default function ColorsTab() {
 
   const currentTextMode = design.textColorMode ?? 'auto';
 
-  const presetThemes = THEMES.filter(t => PRESET_THEME_IDS.includes(t.id));
-  const colorThemes  = THEMES.filter(t => COLOR_THEME_IDS.includes(t.id));
+  const presetThemes  = THEMES.filter(t => PRESET_THEME_IDS.includes(t.id));
+  const colorThemes   = THEMES.filter(t => COLOR_THEME_IDS.includes(t.id));
+  const premiumThemes = THEMES.filter(t => PREMIUM_THEME_IDS.includes(t.id));
 
   const renderThemeCard = (theme: typeof THEMES[0]) => {
     const isSel   = design.themeId === theme.id;
@@ -124,6 +130,44 @@ export default function ColorsTab() {
           {isSel && <Text style={s.tapHint}>Tap for more shades</Text>}
         </View>
         {isSel && <Ionicons name="chevron-forward" size={18} color="#C09A72" />}
+      </TouchableOpacity>
+    );
+  };
+
+  const renderPremiumThemeCard = (theme: typeof THEMES[0]) => {
+    const isLocked = !isPremium;
+    const isSel    = design.themeId === theme.id;
+    const shades   = COLOR_SHADES[theme.id] || [theme.colors.primary];
+    return (
+      <TouchableOpacity
+        key={theme.id}
+        style={[s.themeCard, isSel && s.themeCardSel]}
+        onPress={() => {
+          if (isLocked) { router.push('/modal/paywall'); return; }
+          handleThemePress(theme);
+        }}
+        activeOpacity={0.75}
+      >
+        <LinearGradient
+          colors={['rgba(253,247,239,0.96)', 'rgba(244,236,224,0.92)']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <View style={s.swatches}>
+          {shades.slice(0, 5).map((shade, i) => (
+            <View key={i} style={[s.swatch, { backgroundColor: shade }]} />
+          ))}
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={s.themeName}>{theme.name}</Text>
+          {isSel && <Text style={s.tapHint}>Tap for more shades</Text>}
+        </View>
+        {isSel
+          ? <Ionicons name="chevron-forward" size={18} color="#C09A72" />
+          : isLocked
+            ? <Text style={s.premiumSparkle}>✦</Text>
+            : null
+        }
       </TouchableOpacity>
     );
   };
@@ -204,6 +248,32 @@ export default function ColorsTab() {
       <Text style={s.sectionDesc}>One-tap looks — Boy, Girl, Surprise, Basic</Text>
       {presetThemes.map(renderThemeCard)}
 
+      <View style={s.hairline} />
+
+      {/* EXCLUSIVE PALETTES (Premium) */}
+      <View style={s.plusHead}>
+        <View style={{ flex: 1 }}>
+          <Text style={[s.sectionLabel, { marginTop: 16 }]}>EXCLUSIVE PALETTES</Text>
+          <Text style={s.plusSubtitle}>Carefully crafted colour worlds, available with Plus</Text>
+        </View>
+        <View style={[s.plusBadge, { marginTop: 16 }]}>
+          <Text style={s.plusBadgeTxt}>✦ Plus</Text>
+        </View>
+      </View>
+      {premiumThemes.map(renderPremiumThemeCard)}
+
+      {!isPremium && (
+        <TouchableOpacity
+          style={s.upgradeRow}
+          onPress={() => router.push('/modal/paywall')}
+          activeOpacity={0.7}
+        >
+          <Text style={s.upgradeTxt}>
+            Unlock all exclusive palettes with Plus  →
+          </Text>
+        </TouchableOpacity>
+      )}
+
       {selectedTheme && (
         <ShadePicker
           visible={shadeVisible}
@@ -281,6 +351,34 @@ const s = StyleSheet.create({
   swatchActive: { borderWidth: 2, borderColor: '#7A5830' },
   themeName: { fontSize: 15, fontWeight: '600', color: '#3A2A1C', letterSpacing: -0.1 },
   tapHint:   { fontSize: 11, color: '#B0997E', marginTop: 2 },
+
+  /* Premium palette section */
+  plusHead: {
+    flexDirection: 'row', alignItems: 'flex-start',
+    marginBottom: 14,
+  },
+  plusSubtitle: {
+    fontSize: 12, color: '#B0997E', marginTop: 3,
+    fontFamily: 'Georgia', fontStyle: 'italic',
+  },
+  plusBadge: {
+    paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: 'rgba(192,154,114,0.13)',
+    borderWidth: 0.5, borderColor: 'rgba(168,126,82,0.32)',
+  },
+  plusBadgeTxt: {
+    fontSize: 11, fontWeight: '700',
+    color: '#9A7850', letterSpacing: 0.4,
+  },
+  premiumSparkle: {
+    fontSize: 14, color: '#C09A72',
+  },
+  upgradeRow: { alignItems: 'center', marginTop: 14, marginBottom: 4 },
+  upgradeTxt: {
+    fontSize: 12, color: '#B0997E',
+    fontFamily: 'Georgia', fontStyle: 'italic', letterSpacing: 0.1,
+  },
 
   /* Shade picker modal */
   overlay: {
