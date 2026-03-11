@@ -10,6 +10,7 @@ import { useRouter } from 'expo-router';
 import { useProfile } from '../../context/ProfileContext';
 import { usePregnancy } from '../../context/PregnancyContext';
 import { usePremium } from '../../context/PremiumContext';
+import { useDesign } from '../../context/DesignContext';
 import DatePickerModal from '../DatePickerModal';
 
 const { width: SW } = Dimensions.get('window');
@@ -78,6 +79,8 @@ export default function HomeScreenEditorialV2() {
   const { profile, updateProfile } = useProfile();
   const { updateCurrentPregnancy } = usePregnancy();
   const { isPremium } = usePremium();
+  const { design } = useDesign();
+  const heroPhoto = design.backgroundPhoto ?? null;
 
   // ── Date editing (Start / Due) ─────────────────────────────────────────────
   const [editingDate, setEditingDate] = useState<'start' | 'due' | null>(null);
@@ -178,7 +181,26 @@ export default function HomeScreenEditorialV2() {
         {/* ════════════════════════════════════════
             1. HERO AREA — kein Card-Container
         ════════════════════════════════════════ */}
-        <View style={s.heroArea}>
+        <View style={[s.heroArea, heroPhoto ? s.heroAreaPhoto : null]}>
+
+          {/* User's background photo + warm overlay (when photo is set) */}
+          {heroPhoto && (
+            <>
+              <Image
+                source={{ uri: heroPhoto }}
+                style={StyleSheet.absoluteFillObject}
+                resizeMode="cover"
+              />
+              <LinearGradient
+                colors={[
+                  'rgba(255,248,238,0.78)',
+                  'rgba(255,246,234,0.62)',
+                  'rgba(255,248,238,0.78)',
+                ]}
+                style={StyleSheet.absoluteFillObject}
+              />
+            </>
+          )}
 
           {/* Badge + Edit-Button Row */}
           <View style={s.heroTop}>
@@ -478,7 +500,14 @@ const s = StyleSheet.create({
   scroll: { paddingHorizontal: H_PAD, paddingTop: 10 },
 
   /* ── Hero ── */
-  heroArea:   { paddingTop: 6, paddingBottom: 28 },
+  heroArea:      { paddingTop: 6, paddingBottom: 28, overflow: 'hidden' },
+  heroAreaPhoto: {
+    borderRadius: 20,
+    marginBottom: 6,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 28,
+  },
   heroTop:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 
   badge: {
