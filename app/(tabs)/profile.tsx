@@ -9,9 +9,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useProfile } from '../../context/ProfileContext';
+import { usePregnancy } from '../../context/PregnancyContext';
 import { usePremium } from '../../context/PremiumContext';
 import { getDaysRemaining, formatDateLabel } from '../../utils/date';
 import { loadJSON, saveJSON } from '../../utils/storage';
+import DatePickerModal from '../../components/DatePickerModal';
 
 // ─── Reminders ───────────────────────────────────────────────────────────────
 const REMINDERS_KEY = 'mommy_reminders';
@@ -50,24 +52,6 @@ function ActiveRow({ iconName, label, value, isLast, onPress }: ActiveRowProps) 
   );
 }
 
-interface DisabledRowProps {
-  iconName: keyof typeof Ionicons.glyphMap;
-  label: string; value?: string; isLast: boolean;
-}
-function DisabledRow({ iconName, label, value, isLast }: DisabledRowProps) {
-  return (
-    <View style={[s.listRow, !isLast && s.listRowBorder]}>
-      <View style={s.rowIcon}>
-        <Ionicons name={iconName} size={17} color="rgba(192,154,114,0.55)" />
-      </View>
-      <Text style={[s.rowLabel, { opacity: 0.55 }]}>{label}</Text>
-      <View style={s.rowRight}>
-        {value ? <Text style={[s.rowValue, { opacity: 0.55 }]}>{value}</Text> : null}
-        <Ionicons name="chevron-forward" size={15} color="rgba(160,140,118,0.28)" style={{ marginLeft: 4 }} />
-      </View>
-    </View>
-  );
-}
 
 interface ReminderRowProps {
   iconName: keyof typeof Ionicons.glyphMap;
@@ -98,9 +82,35 @@ function ReminderRow({ iconName, title, subtitle, value, onToggle, isLast }: Rem
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export default function ProfileScreen() {
   const { profile, updateProfile } = useProfile();
+  const { updateCurrentPregnancy } = usePregnancy();
   const { isPremium, togglePremium } = usePremium();
   const router  = useRouter();
   const insets  = useSafeAreaInsets();
+
+  // ── Date editing ───────────────────────────────────────────────────────────
+  const [editingDate, setEditingDate] = useState<'start' | 'due' | null>(null);
+  const [tempDate,    setTempDate]    = useState(new Date());
+
+  const openStartPicker = () => {
+    setTempDate(new Date(profile.startDate));
+    setEditingDate('start');
+  };
+  const openDuePicker = () => {
+    setTempDate(new Date(profile.dueDate));
+    setEditingDate('due');
+  };
+  const confirmDate = () => {
+    const iso = tempDate.toISOString();
+    if (editingDate === 'start') {
+      updateProfile({ startDate: iso });
+      updateCurrentPregnancy({ startDate: iso });
+    } else if (editingDate === 'due') {
+      updateProfile({ dueDate: iso });
+      updateCurrentPregnancy({ dueDate: iso });
+    }
+    setEditingDate(null);
+  };
+  const cancelDate = () => setEditingDate(null);
 
   // ── Reminders ──────────────────────────────────────────────────────────────
   const [remindersWeekly,     setRemindersWeekly]     = useState(true);
@@ -149,7 +159,8 @@ export default function ProfileScreen() {
     return `DUE ${d.toLocaleString('en-US', { month: 'short' }).toUpperCase()} ${d.getDate()}, ${d.getFullYear()}`;
   })();
 
-  const dueDateRow = formatDateLabel(profile.dueDate);
+  const dueDateRow   = formatDateLabel(profile.dueDate);
+  const startDateRow = formatDateLabel(profile.startDate);
 
   const genderSymbol = profile.gender === 'boy' ? '♂' : profile.gender === 'girl' ? '♀' : '?';
   const genderLabel  = profile.gender === 'boy' ? 'BOY' : profile.gender === 'girl' ? 'GIRL' : 'SURPRISE';
@@ -224,8 +235,9 @@ export default function ProfileScreen() {
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFillObject}
           />
-          <ActiveRow   iconName="person-outline"   label="Baby Name" value={babyName}    isLast={false} onPress={openNameEdit} />
-          <DisabledRow iconName="calendar-outline" label="Due Date"  value={dueDateRow}  isLast={true} />
+          <ActiveRow iconName="person-outline"   label="Baby Name"   value={babyName}    isLast={false} onPress={openNameEdit} />
+          <ActiveRow iconName="calendar-outline" label="Start Date"  value={startDateRow} isLast={false} onPress={openStartPicker} />
+          <ActiveRow iconName="calendar"         label="Due Date"    value={dueDateRow}   isLast={true}  onPress={openDuePicker} />
         </View>
 
         {/* ── Reminders ── */}
@@ -360,6 +372,18 @@ export default function ProfileScreen() {
         </View>
 
       </ScrollView>
+
+      {/* ── Date Picker Modal ── */}
+      <DatePickerModal
+        visible={editingDate !== null}
+        title={editingDate === 'start' ? 'Select Start Date' : 'Select Due Date'}
+        value={tempDate}
+        onChange={setTempDate}
+        onConfirm={confirmDate}
+        onCancel={cancelDate}
+        maximumDate={editingDate === 'start' ? new Date() : undefined}
+        minimumDate={editingDate === 'due'   ? new Date() : undefined}
+      />
 
       {/* ── Baby Name Edit Modal ── */}
       <Modal visible={isEditingName} transparent animationType="fade">
