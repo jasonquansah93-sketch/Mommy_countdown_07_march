@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useProfile } from '../../context/ProfileContext';
+import { usePremium } from '../../context/PremiumContext';
 
 const { width: SW } = Dimensions.get('window');
 const H_PAD = 20;
@@ -73,6 +74,7 @@ export default function HomeScreenEditorialV2() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { profile, updateProfile } = useProfile();
+  const { isPremium } = usePremium();
 
   const dueDate = useMemo(() => {
     if (profile?.dueDate) return profile.dueDate;
@@ -210,6 +212,17 @@ export default function HomeScreenEditorialV2() {
             <Ionicons name="share-outline" size={17} color="rgba(255,248,238,0.95)" style={{ marginRight: 9 }} />
             <Text style={s.shareTxt}>Share our countdown</Text>
           </TouchableOpacity>
+
+          {/* ── Premium share teaser (free only) ── */}
+          {!isPremium && (
+            <TouchableOpacity
+              onPress={() => router.push('/modal/paywall')}
+              activeOpacity={0.7}
+              style={s.shareTeaser}
+            >
+              <Text style={s.shareTeaserTxt}>✦  Share a beautiful card with Plus</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* ════════════════════════════════════════
@@ -259,6 +272,19 @@ export default function HomeScreenEditorialV2() {
             />
           </View>
           <Text style={s.progDateBot}>Due  {fmt(dueDate)}</Text>
+
+          {/* ── Memory nudge — subtil, kein Premium-Lock ── */}
+          <View style={s.progMemoryRow}>
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/journey')}
+              activeOpacity={0.7}
+              style={s.progMemoryBtn}
+            >
+              <Ionicons name="camera-outline" size={13} color="rgba(90,74,56,0.55)" />
+              <Text style={s.progMemoryTxt}>Capture a memory</Text>
+              <Ionicons name="chevron-forward" size={12} color="rgba(90,74,56,0.40)" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* ════════════════════════════════════════
@@ -332,8 +358,22 @@ export default function HomeScreenEditorialV2() {
 
           <Text style={s.custTitle}>Make it truly yours</Text>
           <Text style={s.custBody}>
-            Personalize your countdown with fonts,{'\n'}colors, and photos
+            Personalise your countdown with fonts,{'\n'}colors, and your own photos.
           </Text>
+
+          {/* ── 3 Feature-Pills — subtil, elegant ── */}
+          <View style={s.featurePills}>
+            {([
+              { label: 'Premium Themes', icon: 'color-palette-outline' },
+              { label: 'Memory Vault',   icon: 'images-outline'        },
+              { label: 'Video Export',   icon: 'film-outline'          },
+            ] as const).map((f, i) => (
+              <View key={i} style={s.featurePill}>
+                <Ionicons name={f.icon} size={11} color="#9A8472" style={{ marginRight: 4 }} />
+                <Text style={s.featurePillTxt}>{f.label}</Text>
+              </View>
+            ))}
+          </View>
 
           <TouchableOpacity
             style={s.custBtn}
@@ -348,6 +388,17 @@ export default function HomeScreenEditorialV2() {
             <Ionicons name="pencil-outline" size={15} color="rgba(255,248,238,0.95)" style={{ marginRight: 9 }} />
             <Text style={s.custBtnTxt}>Customize design</Text>
           </TouchableOpacity>
+
+          {/* ── Sekundärer Premium-Link (free only) ── */}
+          {!isPremium && (
+            <TouchableOpacity
+              onPress={() => router.push('/modal/paywall')}
+              activeOpacity={0.7}
+              style={s.custUpgradeRow}
+            >
+              <Text style={s.custUpgradeTxt}>Unlock everything with Plus  →</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
       </ScrollView>
@@ -551,4 +602,48 @@ const s = StyleSheet.create({
     alignSelf: 'stretch',
   },
   custBtnTxt: { fontSize: 15, fontWeight: '600', color: '#FFF8EF', letterSpacing: 0.1 },
+
+  /* ── Share teaser ── */
+  shareTeaser: { alignItems: 'center', marginTop: 11 },
+  shareTeaserTxt: {
+    fontSize: 11, color: 'rgba(160,140,118,0.78)',
+    fontFamily: 'Georgia', fontStyle: 'italic', letterSpacing: 0.2,
+  },
+
+  /* ── Journey Progress — memory nudge ── */
+  progMemoryRow: {
+    marginTop: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(120,90,60,0.15)',
+    paddingTop: 10,
+  },
+  progMemoryBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+  },
+  progMemoryTxt: {
+    flex: 1, fontSize: 13, color: 'rgba(90,74,56,0.60)',
+    fontFamily: 'Georgia', fontStyle: 'italic',
+  },
+
+  /* ── Customize — feature pills ── */
+  featurePills: {
+    flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20,
+  },
+  featurePill: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: 10,
+    backgroundColor: 'rgba(192,154,114,0.11)',
+    borderWidth: 0.5, borderColor: 'rgba(168,126,82,0.22)',
+  },
+  featurePillTxt: {
+    fontSize: 11, color: '#9A8472', fontWeight: '500', letterSpacing: 0.1,
+  },
+
+  /* ── Customize — upgrade link ── */
+  custUpgradeRow: { alignItems: 'center', marginTop: 13 },
+  custUpgradeTxt: {
+    fontSize: 12, color: '#B0997E',
+    fontFamily: 'Georgia', fontStyle: 'italic', letterSpacing: 0.1,
+  },
 });
